@@ -15,7 +15,7 @@ from technogen.dsp import SR
 from render import load_buses
 
 BAND_HZ = {"low": (25, 150), "mid": (250, 9000), "full": (25, 16000)}
-FOCUS = {"drums": (5000, 16000), "lead": (900, 6000), "voice": (300, 3000),
+FOCUS = {"drums": (5000, 16000), "lead": (900, 6000), "voice": (300, 3000), "scream": (300, 6000),
          "bass": (100, 900), "fx": (400, 9000), "pad": (250, 3000),
          "kick": (35, 110), "rumble": (35, 150), "sub": (30, 100),
          "kickfar": (30, 400), "air": (60, 900)}

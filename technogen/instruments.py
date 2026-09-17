@@ -275,6 +275,7 @@ VOWELS = {
     "eh": ([530, 1840, 2480, 3500], [80, 100, 170, 250], [1.0, 0.60, 0.35, 0.10]),
     "ee": ([270, 2290, 3010, 3600], [70, 110, 180, 260], [1.0, 0.45, 0.30, 0.10]),
     "uh": ([640, 1190, 2390, 3300], [85, 105, 170, 250], [1.0, 0.50, 0.25, 0.08]),
+    "l":  ([360, 1200, 2700, 3300], [70, 110, 180, 250], [1.0, 0.35, 0.20, 0.06]),
 }
 
 
@@ -356,6 +357,91 @@ def vocal_stab(dur=0.42, root=57, vowel="eh", drive=6.0, seed=2):
     x = tanh_drive(x * 1.8, drive)
     x = biquad(x, "bp", 1200, 0.5) * 0.5 + x
     return normalize(x, 0.85)
+
+
+def scream(dur=1.5, f0=(250.0, 520.0, 340.0), vowel_path=((0.0, "eh"), (1.0, "ah")),
+           roughness=0.55, breath=0.45, drive=6.0, seed=0, effort=1.0,
+           shout=0.25, rasp=0.12, hiss=0.15, edge=0.60):
+    """A shouted, distressed voice.
+
+    A scream is not just a loud vowel. It needs pitch an octave above speech,
+    irregular pitch (jitter), a subharmonic rattle where the vocal folds stop
+    tracking, turbulent noise from the constriction, and the nonlinearity of a
+    vocal tract being driven far past its linear range. All four, or it reads
+    as singing.
+    """
+    n = n_samples(dur)
+    t = np.arange(n) / SR
+    r = np.random.default_rng(seed + 991)
+
+    contour = env_curve([(0.0, f0[0]), (0.10, f0[1]), (0.55, f0[1] * 0.97),
+                         (1.0, f0[2])], n)
+    jitter = biquad(r.standard_normal(n), "lp", 11.0, 0.7)
+    jitter /= (np.max(np.abs(jitter)) + 1e-9)
+    contour *= 1.0 + 0.045 * effort * jitter
+    contour *= 1.0 + 0.022 * np.sin(TWO_PI * 5.6 * t) * np.clip(t / (0.3 * dur), 0, 1)
+
+    ph = np.cumsum(contour) / SR
+    src = 2.0 * (ph % 1.0) - 1.0                       # bright saw, no smoothing
+    src += 0.55 * np.where((ph % 1.0) < 0.22, 1.0, -1.0)
+    # diplophonia: the fold rattle that makes a shout sound strained
+    src += roughness * 0.45 * (2.0 * ((ph * 0.5) % 1.0) - 1.0)
+    shimmer = biquad(r.standard_normal(n), "lp", 26.0, 0.7)
+    shimmer /= (np.max(np.abs(shimmer)) + 1e-9)
+    src *= 1.0 + roughness * 0.30 * shimmer
+    src = biquad(src, "lp", 8500, 0.7)
+    # turbulence at the constriction
+    src += breath * 1.4 * biquad(noise(n, seed=seed + 5), "bp", 2600, 0.35)
+
+    tracks, bws, gains = [], [], []
+    for i in range(4):
+        pts = [(pos, VOWELS[v][0][i]) for pos, v in vowel_path]
+        tracks.append(env_curve(pts, n))
+        bws.append(VOWELS[vowel_path[0][1]][1][i] * 1.45)
+        gains.append(np.mean([VOWELS[v][2][i] for _, v in vowel_path]))
+    src = normalize(src, 0.9)
+    x = normalize(formant_sweep(src, tracks, bws, gains), 0.9)
+
+    # A screamed vowel at 600 Hz has its formants sitting between harmonics,
+    # so the resonators alone just ring on the fundamental. The upper bands
+    # have to be built from the source: the shout formant near 3 kHz, plus a
+    # distorted high band for the rasp.
+    x += shout * effort * normalize(biquad(src, "bp", 3050, 3.5), 0.9)
+    x += rasp * effort * normalize(biquad(src, "bp", 4600, 2.5), 0.9)
+    x += hiss * normalize(biquad(noise(n, seed=seed + 61), "hp", 3500, 0.7), 0.9)
+    x = normalize(x, 0.9)
+
+    x = waveshape(x * 3.0, drive, sym=0.18)
+    x = x + edge * effort * tanh_drive(biquad(x, "hp", 1600, 0.7) * 5.0, 8.0)
+    x = biquad(x, "hp", 190, 0.7)
+    x = biquad(x, "lp", 13000, 0.7)
+    return normalize(x, 0.9)
+
+
+def scream_help(dur=1.6, pitch=1.0, seed=0, drive=6.5, effort=1.0):
+    """The word shaped as h-eh-l-p: aspiration, the vowel, the lateral,
+    a lip closure and the release burst."""
+    n = n_samples(dur)
+    voiced = scream(dur, f0=(250 * pitch, 520 * pitch, 350 * pitch),
+                    vowel_path=((0.0, "eh"), (0.45, "eh"), (0.72, "l"), (1.0, "l")),
+                    roughness=0.6, breath=0.4, drive=drive, seed=seed, effort=effort,
+                    shout=0.38, rasp=0.18, edge=0.75)
+    # amplitude: /h/ swell, vowel, lateral, then the closure gap before /p/
+    amp = env_curve([(0.0, 0.0), (0.05, 0.55), (0.12, 1.0), (0.45, 0.92),
+                     (0.62, 0.68), (0.78, 0.30), (0.82, 0.0), (1.0, 0.0)], n)
+    x = voiced * amp
+
+    a = n_samples(dur * 0.06)                          # /h/ aspiration
+    asp = biquad(noise(a, seed=seed + 31), "bp", 1900, 0.7) * env_curve(
+        [(0, 0.2), (0.4, 1.0), (1, 0.3)], a)
+    x[:a] += 0.30 * asp
+
+    b0 = n_samples(dur * 0.88)                         # /p/ release
+    bl = min(n - b0, n_samples(0.035))
+    if bl > 0:
+        burst = biquad(noise(bl, seed=seed + 47), "bp", 1200, 0.5) * env_exp(bl, 0.006, 0.0004)
+        x[b0:b0 + bl] += 0.45 * burst
+    return normalize(x, 0.9)
 
 
 def whisper(dur, seed=3, tone=1.0):

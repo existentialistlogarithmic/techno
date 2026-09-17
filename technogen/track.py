@@ -81,6 +81,16 @@ def build_palette():
     p["vstab2"] = I.vocal_stab(0.32, root=62, vowel="ah", drive=8)
     p["vstab_low"] = pitch_shift_naive(I.vocal_stab(0.5, root=50, vowel="oh", drive=5), 1.45)
 
+    # cries for help, at varying distances
+    p["help_far"] = I.scream_help(1.9, pitch=0.85, seed=7, drive=5.0, effort=0.85)
+    p["help_mid"] = I.scream_help(1.6, pitch=1.0, seed=0, drive=6.5, effort=1.0)
+    p["help_near"] = I.scream_help(1.45, pitch=1.12, seed=11, drive=7.5, effort=1.15)
+    p["help_panic"] = I.scream_help(1.25, pitch=1.22, seed=3, drive=8.0, effort=1.2)
+    p["cry"] = I.scream(1.7, f0=(230, 560, 300), vowel_path=((0.0, "eh"), (0.5, "ah"), (1.0, "ah")),
+                        roughness=0.65, breath=0.5, drive=6.5, seed=5)
+    p["cry_short"] = I.scream(0.85, f0=(320, 620, 380), vowel_path=((0.0, "ah"), (1.0, "eh")),
+                              roughness=0.7, breath=0.45, drive=7.5, seed=9, effort=1.15)
+
     p["pad_a"] = I.pad([42, 49, 54, 57], 12.8, detune=16, cutoff=1300, drive=1.5)
     p["pad_b"] = I.pad([40, 47, 52, 59], 12.8, detune=18, cutoff=1100, drive=1.5)
     return p
@@ -210,6 +220,11 @@ def lay_lead_screech(s, p, b0, b1, gain=0.45):
             s.place("lead", p[keys[(i // 2 + 1) % 2]], b, 14, gain=gain * 0.65, pan_=0.3)
 
 
+def far(x, hz, rolloff=2):
+    """Distance cue: air and walls eat the top end long before the level."""
+    return biquad(x, "lp", hz, 0.7, stages=rolloff)
+
+
 def build(verbose=True):
     def log(msg):
         if verbose:
@@ -234,6 +249,11 @@ def build(verbose=True):
                 s.mark_kick(b, st)
     lay_hats(s, p, 10, 16, density=8, open_off=False, gain=0.18)
     s.place("voice", p["chat_a"], 2, 4, gain=0.30, pan_=-0.4)
+    # someone is shouting for help somewhere in the building, getting closer
+    s.place("scream", far(p["help_far"], 1200), 2, 10, gain=0.34, pan_=-0.45)
+    s.place("scream", far(p["cry"], 2100), 5, 6, gain=0.46, pan_=0.42)
+    s.place("scream", far(p["help_mid"], 4200), 9, 8, gain=0.66, pan_=-0.18)
+    s.place("scream", far(p["help_panic"], 6800), 13, 10, gain=0.78, pan_=0.22)
     s.place("voice", p["whisper"], 6, 0, gain=0.24, pan_=0.45)
     s.place("voice", p["chat_b"], 12, 6, gain=0.26, pan_=0.3)
     s.place("fx", p["scr_dn"], 7, 8, gain=0.18, pan_=0.2)
@@ -293,6 +313,8 @@ def build(verbose=True):
     s.place("voice", p["moan_a"], 73, 4, gain=0.42, pan_=-0.22)
     s.place("voice", p["moan_b"], 76, 0, gain=0.40, pan_=0.26)
     s.place("voice", p["whisper"], 74, 8, gain=0.26, pan_=0.4)
+    s.place("scream", far(p["help_far"], 1700), 75, 4, gain=0.42, pan_=0.45)
+    s.place("scream", far(p["cry"], 2200), 86, 8, gain=0.38, pan_=-0.4)
     s.place("voice", p["moan_c"], 78, 8, gain=0.36, pan_=-0.3)
     s.place("voice", p["chat_a"], 79, 0, gain=0.24, pan_=0.2)
     s.place("voice", p["moan_a"], 82, 0, gain=0.38, pan_=0.3)
@@ -342,6 +364,7 @@ def build(verbose=True):
         s.place("lead", p["scr_up"], b + 7, 8, gain=0.32, pan_=RNG.uniform(-0.3, 0.3))
         s.place("voice", p["vstab2"], b + 3, 12, gain=0.28, pan_=RNG.uniform(-0.3, 0.3))
     s.place("voice", p["vstab_low"], 111, 8, gain=0.34, pan_=-0.2)
+    s.place("scream", far(p["cry_short"], 7000), 119, 14, gain=0.55, pan_=0.25)
     s.place("voice", p["moan_c"], 118, 0, gain=0.26, pan_=0.35)
     s.place("lead", p["scr_ud"], 127, 8, gain=0.36, pan_=0.15)
     s.place("fx", p["impact"], 120, 0, gain=0.45)
@@ -360,6 +383,7 @@ def build(verbose=True):
     s.place("fx", p["impact"], 148, 0, gain=0.55)
     s.place("voice", p["whisper"], 148, 8, gain=0.26, pan_=-0.35)
     s.place("fx", p["rev_swell"], 150, 0, gain=0.2)
+    s.place("scream", far(p["help_far"], 1100), 149, 8, gain=0.40, pan_=-0.35)
 
     return s, p
 
@@ -378,6 +402,7 @@ TARGETS = {
     "bass":    (0.0, "mid"),
     "lead":    (4.0, "mid"),
     "voice":   (0.0, "mid"),
+    "scream":  (-2.0, "mid"),
     "fx":      (0.0, "mid"),
     "pad":     (-7.0, "mid"),
     "air":     (-16.0, "mid"),
@@ -410,7 +435,8 @@ def process_buses(s, p, verbose=True):
             print(f"  {msg}", flush=True)
 
     n = s.n
-    for nm in ("kick", "kickfar", "sub", "drums", "bass", "lead", "voice", "fx", "pad", "air"):
+    for nm in ("kick", "kickfar", "sub", "drums", "bass", "lead", "voice", "scream",
+               "fx", "pad", "air"):
         s.bus(nm)
 
     log("rumble bus")
@@ -465,6 +491,14 @@ def process_buses(s, p, verbose=True):
     s.buses["voice"] = biquad(s.buses["voice"], "hp", 130, 0.7)
     s.buses["voice"] = tanh_drive(s.buses["voice"], 1.5)
 
+    log("screams: the room answers them")
+    s.buses["scream"] = tanh_drive(s.buses["scream"], 1.6)
+    s.buses["scream"] = send_delay(s.buses["scream"], 0.34, s.step * 6, feedback=0.46, damp=2800)
+    s.buses["scream"] = send_reverb(s.buses["scream"], 1.15, rt60=4.4, damp=0.6, hp=210,
+                                    predelay=0.045, seed=101)
+    s.buses["scream"] = widen(s.buses["scream"], 0.45, 15.0)
+    s.buses["scream"] = biquad(s.buses["scream"], "hp", 160, 0.7)
+
     s.buses["fx"] = send_reverb(s.buses["fx"], 0.55, rt60=3.2, damp=0.55, hp=160, seed=71)
     s.buses["fx"] = widen(s.buses["fx"], 0.6, 17.0)
 
@@ -480,7 +514,7 @@ def process_buses(s, p, verbose=True):
     light = s.duck_envelope(depth=0.34, attack=0.005, hold=0.012, release=0.10)
     s.apply_duck(["rumble", "sub"], deep)
     s.apply_duck(["bass", "pad"], mid)
-    s.apply_duck(["lead", "voice", "fx", "drums", "air"], light)
+    s.apply_duck(["lead", "voice", "scream", "fx", "drums", "air"], light)
 
     return s.buses
 

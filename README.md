@@ -17,7 +17,7 @@ Renders in about 100 seconds. `--mp3` additionally needs `pip install lameenc`.
 
 | bars | section | what happens |
 |---|---|---|
-| 0–15 | intro | room tone, 50 Hz hum, distant voices, muffled kick behind a closed filter |
+| 0–15 | intro | room tone, 50 Hz hum, a voice screaming for help somewhere in the building, muffled kick behind a closed filter |
 | 16–31 | build 1 | kick opens up bar by bar, acid line enters, percussion thickens |
 | 32–39 | pre-drop | accelerating snare roll, noise + tone risers, everything cuts |
 | 40–71 | **drop 1** | full kick, rumble, hoover riff, screeches, vocal stabs |
@@ -59,6 +59,20 @@ ladder filter, then a six-stage swept allpass phaser.
 **Acid** — a 303 model: saw through a resonant lowpass whose cutoff is driven
 by the note envelope, with per-step accent and glide.
 
+**Screams** — a scream is not just a loud vowel, and building it as one gives
+you opera. It needs four things at once: pitch an octave above speech, *jitter*
+(irregular pitch, from a lowpassed random walk), a subharmonic rattle where the
+folds stop tracking cleanly, turbulent noise from the constriction, and real
+nonlinearity from a vocal tract driven past its linear range.
+
+The word is shaped as `h-eh-l-p`: an aspiration burst, the vowel, a lateral
+with its own formant target, a silent lip closure, then the release burst.
+At a scream's pitch the formants fall *between* harmonics, so the resonators
+alone just ring on the fundamental — the 2–6 kHz bands have to be built from
+the source with a shout formant near 3 kHz and a distorted high band. Each
+scream is then filtered for distance before it hits the bus, because air and
+walls eat the top end long before they eat the level.
+
 **Voices** — formant synthesis. A glottal saw source runs through four parallel
 resonators whose centre frequencies move between vowel targets, so a moan is a
 pitch glide with an `oo → ah → oo` formant path and the chatter is random
@@ -95,7 +109,8 @@ python3 spectrum.py   concrete_cathedral.wav 104 136  # vs. reference master cur
 python3 audibility.py buses 40 72                   # is each bus actually audible
 ```
 
-`arc.py` caught the worst bug in this track: the first version had the build
+`audibility.py` caught the screams being 21 dB above everything else at 50%
+duty — not a distant cry, just continuous screaming. `arc.py` caught the worst bug in this track: the first version had the build
 and the drop at exactly the same level, because the kick and sub were already
 at full size before bar 40. The drop landed on nothing. The automation curves
 in `track.py` hold the low end back through the builds so bar 40 arrives with a
