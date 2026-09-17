@@ -5,7 +5,7 @@ from .dsp import (SR, TWO_PI, n_samples, t_axis, db, fit, as_array, sine, saw, s
                   noise, supersaw, env_ar, env_exp, env_adsr, env_curve, biquad, sweep,
                   ladder, tanh_drive, soft_clip, hard_clip, foldback, bitcrush, waveshape,
                   reverb, delay, chorus, phaser, widen, pan, stereoize, normalize,
-                  pitch_shift_naive, compress)
+                  pitch_shift_naive, compress, drive_os, clip_os, oversampled)
 
 
 def note_hz(midi):
@@ -43,9 +43,9 @@ def kick(dur=0.62, tune=48.0, punch=1.0, drive=7.0, decay=0.13, click=1.0, dirt=
     tr += 0.35 * np.sin(TWO_PI * 620 * t) * env_exp(n, 0.008, 0.0004)
 
     x = body + click * 0.45 * tr
-    x = tanh_drive(x, drive)
-    x = x + dirt * 0.35 * foldback(x * 1.5, 0.85)
-    x = soft_clip(x * 1.25, 0.78)
+    x = drive_os(x, drive)
+    x = x + dirt * 0.35 * oversampled(lambda v: foldback(v * 1.5, 0.85), x, 4)
+    x = clip_os(x * 1.25, 0.78)
     x = biquad(x, "hp", 33, 0.7)
     x = biquad(x, "lp", 12500, 0.7)
     x = biquad(x, "bp", 68, 1.1) * 0.45 + x            # low-end weight
@@ -72,7 +72,7 @@ def hat(dur=0.06, tone=9000.0, decay=0.014, metal=0.5):
     x = biquad(x, "hp", tone, 0.8)
     x = biquad(x, "bp", tone * 1.35, 0.9) * 0.6 + x
     x *= env_exp(n, decay, 0.0004)
-    return normalize(tanh_drive(x, 2.2), 0.8)
+    return normalize(drive_os(x, 2.2), 0.8)
 
 
 def clap(dur=0.5, tone=1500.0, spread=0.011, body=0.3):
@@ -87,7 +87,7 @@ def clap(dur=0.5, tone=1500.0, spread=0.011, body=0.3):
     x = x + tail
     x = biquad(x, "bp", tone, 0.85)
     x = biquad(x, "hp", 600, 0.7)
-    return normalize(tanh_drive(x, 2.0), 0.85)
+    return normalize(drive_os(x, 2.0), 0.85)
 
 
 def snare(dur=0.34, tune=190.0, snap=0.75):
@@ -97,7 +97,7 @@ def snare(dur=0.34, tune=190.0, snap=0.75):
     nz = biquad(noise(n, seed=9), "hp", 1400, 0.7) * env_exp(n, 0.085, 0.0008)
     x = (1 - snap) * tone + snap * nz + 0.3 * tone
     x = biquad(x, "bp", 2300, 0.5) * 0.4 + x
-    return normalize(tanh_drive(x, 3.0), 0.85)
+    return normalize(drive_os(x, 3.0), 0.85)
 
 
 def ride(dur=1.1, tone=5200.0, decay=0.42):
@@ -117,7 +117,7 @@ def tom(dur=0.45, tune=110.0, decay=0.13):
     f = tune + tune * 1.1 * np.exp(-t / 0.03)
     x = np.sin(TWO_PI * np.cumsum(f) / SR) * env_exp(n, decay)
     x += 0.25 * noise(n, seed=44) * env_exp(n, 0.012)
-    return normalize(tanh_drive(x, 3.5), 0.85)
+    return normalize(drive_os(x, 3.5), 0.85)
 
 
 def rim(dur=0.12, tune=1700.0):
@@ -167,7 +167,7 @@ def screech(dur, base=900.0, top=4200.0, wobble=7.0, res=0.93, drive=9.0,
     src += grit * 0.35 * noise(n, seed=seed + 11)
     co = f * 2.1
     x = sweep(src, "bp", np.clip(co, 120, 15000), 3.0 + 14.0 * res, stages=2)
-    x = tanh_drive(x * 3.0, drive)
+    x = drive_os(x * 3.0, drive)
     x = sweep(x, "bp", np.clip(co * 1.02, 120, 16000), 2.0 + 8.0 * res)
     x = biquad(x, "hp", 300, 0.7)
     x *= env_ar(n, 0.004, dur * 0.4, curve=2.0)
@@ -205,7 +205,7 @@ def acid(seq, bpm, cutoff=430.0, env_mod=3200.0, res=0.82, drive=6.0, decay=0.22
     osc += 0.35 * saw(freqs * 0.5, n)
     co = cutoff + env_mod * gate * (1 + 1.1 * accent) + 0.0
     x = ladder(osc * (0.75 + 0.45 * accent), np.clip(co, 60, 13000), res)
-    x = tanh_drive(x * 1.6, drive)
+    x = drive_os(x * 1.6, drive)
     x = biquad(x, "hp", 55, 0.7)
     x *= (gate > 0) * (0.7 + 0.5 * accent)
     return normalize(x, 0.9)
@@ -239,7 +239,7 @@ def stab(midi, dur=0.28, detune=18.0, cutoff=2600, res=0.7, drive=5.0):
     env = env_exp(n, dur * 0.28, 0.002)
     co = cutoff * env_curve([(0, 1.0), (0.25, 0.45), (1, 0.3)], n)
     x = ladder(x, co, res) * env
-    return normalize(tanh_drive(x, drive), 0.85)
+    return normalize(drive_os(x, drive), 0.85)
 
 
 def pad(midis, dur, detune=14.0, cutoff=1500.0, movement=0.12, drive=1.4):
@@ -252,7 +252,7 @@ def pad(midis, dur, detune=14.0, cutoff=1500.0, movement=0.12, drive=1.4):
     x /= len(midis)
     co = cutoff * (1 + movement * np.sin(TWO_PI * 0.07 * t + 1.0))
     x = ladder(x, co, 0.45)
-    x = tanh_drive(x, drive)
+    x = drive_os(x, drive)
     x *= env_ar(n, dur * 0.25, dur * 0.5, curve=1.6)
     return normalize(x, 0.7)
 
@@ -262,7 +262,7 @@ def rumble_from(sub_bus, rt60=1.9, cut=190.0, drive=2.6):
     wet = reverb(sub_bus, rt60=rt60, predelay=0.004, damp=0.85, hp=28.0, seed=17, width=0.35)
     wet = biquad(wet, "lp", cut, 0.8)
     wet = biquad(wet, "hp", 34, 0.7)
-    wet = tanh_drive(wet, drive)
+    wet = drive_os(wet, drive)
     return wet
 
 
@@ -482,7 +482,7 @@ def riser_tone(dur, midi_from=38, midi_to=74, detune=20.0, drive=3.0):
     f = note_hz(midi_from) * (note_hz(midi_to) / note_hz(midi_from)) ** (p ** 1.4)
     x = supersaw(f, n, voices=7, detune_cents=detune)
     x = ladder(x, np.clip(f * 6, 300, 14000), 0.7)
-    x = tanh_drive(x, drive)
+    x = drive_os(x, drive)
     x *= p ** 1.8
     return normalize(x, 0.8)
 
@@ -494,7 +494,7 @@ def downlifter(dur=2.2, f_from=2400.0, f_to=60.0, seed=6):
     x = np.sin(TWO_PI * np.cumsum(f) / SR)
     x += 0.5 * sweep(noise(n, seed=seed), "bp", f * 2.5, 3.0)
     x *= np.exp(-p * 2.4)
-    return normalize(tanh_drive(x, 2.5), 0.85)
+    return normalize(drive_os(x, 2.5), 0.85)
 
 
 def impact(dur=2.6, tune=44.0, seed=8):
@@ -533,4 +533,4 @@ def zap(dur=0.35, f_from=5200.0, f_to=180.0, seed=15):
     x = square(f, n, 0.4) + 0.5 * noise(n, seed=seed)
     x = sweep(x, "bp", f * 1.6, 6.0)
     x *= np.exp(-p * 4.0)
-    return normalize(tanh_drive(x, 5.0), 0.8)
+    return normalize(drive_os(x, 5.0), 0.8)

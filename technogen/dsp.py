@@ -1,7 +1,7 @@
 """Core DSP primitives: oscillators, envelopes, filters, distortion, space."""
 
 import numpy as np
-from scipy.signal import lfilter, oaconvolve
+from scipy.signal import lfilter, oaconvolve, resample_poly
 
 SR = 44100
 TWO_PI = 2.0 * np.pi
@@ -50,12 +50,38 @@ def sine(freq, n, phase0=0.0):
     return np.sin(TWO_PI * phasor(freq, n, phase0))
 
 
-def saw(freq, n, phase0=0.0):
-    return 2.0 * phasor(freq, n, phase0) - 1.0
+def _polyblep(t, dt):
+    """Correction around a phase discontinuity, so the step is band-limited."""
+    out = np.zeros_like(t)
+    lo = t < dt
+    if np.any(lo):
+        u = t[lo] / dt[lo]
+        out[lo] = u + u - u * u - 1.0
+    hi = t > 1.0 - dt
+    if np.any(hi):
+        u = (t[hi] - 1.0) / dt[hi]
+        out[hi] = u * u + u + u + 1.0
+    return out
 
 
-def square(freq, n, duty=0.5, phase0=0.0):
-    return np.where(phasor(freq, n, phase0) < duty, 1.0, -1.0)
+def saw(freq, n, phase0=0.0, blep=True):
+    p = phasor(freq, n, phase0)
+    y = 2.0 * p - 1.0
+    if blep:
+        dt = np.clip(as_array(freq, n) / SR, 1e-7, 0.45)
+        y -= _polyblep(p, dt)
+    return y
+
+
+def square(freq, n, duty=0.5, phase0=0.0, blep=True):
+    p = phasor(freq, n, phase0)
+    d = as_array(duty, n)
+    y = np.where(p < d, 1.0, -1.0)
+    if blep:
+        dt = np.clip(as_array(freq, n) / SR, 1e-7, 0.45)
+        y += _polyblep(p, dt)
+        y -= _polyblep((p - d) % 1.0, dt)
+    return y
 
 
 def tri(freq, n, phase0=0.0):
@@ -240,6 +266,18 @@ def formant(x, freqs, bws, gains):
 
 # ------------------------------------------------------------- distortion
 
+def oversampled(fn, x, factor=4, axis=-1):
+    """Run a nonlinearity at a higher rate so its harmonics land above
+    Nyquist and get filtered out instead of folding back as aliasing."""
+    if factor <= 1:
+        return fn(x)
+    n = x.shape[axis]
+    up = resample_poly(x, factor, 1, axis=axis)
+    y = fn(up)
+    down = resample_poly(y, 1, factor, axis=axis)
+    return np.take(down, np.arange(n), axis=axis)
+
+
 def tanh_drive(x, amount=3.0, comp=True):
     y = np.tanh(x * amount)
     return y / np.tanh(amount) if comp else y
@@ -274,9 +312,18 @@ def bitcrush(x, bits=8, hold=1):
     return y
 
 
-def waveshape(x, drive=4.0, sym=0.0):
+def waveshape(x, drive=4.0, sym=0.0, os=4):
     """Asymmetric drive: adds even harmonics = extra dirt."""
-    return tanh_drive(x + sym * x * x, drive)
+    return oversampled(lambda v: tanh_drive(v + sym * v * v, drive), x, os)
+
+
+def drive_os(x, amount=3.0, os=4):
+    """Anti-aliased saturation - the default for anything with harmonics."""
+    return oversampled(lambda v: tanh_drive(v, amount), x, os)
+
+
+def clip_os(x, thresh=0.8, os=4):
+    return oversampled(lambda v: soft_clip(v, thresh), x, os)
 
 
 # ----------------------------------------------------------------- dynamics
@@ -447,3 +494,125 @@ def pitch_shift_naive(x, ratio):
     if x.ndim == 1:
         return x[i0] * (1 - fr) + x[i1] * fr
     return np.stack([x[c][i0] * (1 - fr) + x[c][i1] * fr for c in range(2)])
+
+
+# ------------------------------------------------------------------ samples
+
+def load_wav(path, target_sr=SR, mono=True):
+    """Read a wav and resample to the engine rate."""
+    from scipy.io import wavfile
+    sr, data = wavfile.read(path)
+    x = data.astype(np.float64)
+    if x.dtype == np.int16 or np.max(np.abs(x)) > 2.0:
+        x = x / 32768.0
+    if x.ndim > 1:
+        x = x.mean(axis=1) if mono else x.T
+    if sr != target_sr:
+        from math import gcd
+        g = gcd(int(sr), int(target_sr))
+        x = resample_poly(x, target_sr // g, sr // g, axis=-1)
+    return x
+
+
+# ----------------------------------------------------------------- vocoder
+
+def vocoder(mod, car, bands=22, lo=140.0, hi=8500.0, q=7.0,
+            attack=0.004, release=0.035, tilt=0.0):
+    """Classic channel vocoder: the modulator's spectral envelope imposed on
+    a carrier. Noise carrier gives whispered speech; a saw stack gives the
+    industrial choir."""
+    n = min(mod.shape[-1], car.shape[-1])
+    mod, car = mod[..., :n], car[..., :n]
+    edges = np.geomspace(lo, hi, bands + 1)
+    out = np.zeros(n)
+    for i in range(bands):
+        fc = float(np.sqrt(edges[i] * edges[i + 1]))
+        m = biquad(mod, "bp", fc, q)
+        c = biquad(car, "bp", fc, q)
+        env = env_follow(m, attack, release)
+        out += c * env * (10.0 ** (tilt * np.log2(fc / lo) / 20.0))
+    return out
+
+
+# ------------------------------------------------------------- time effects
+
+def varispeed(x, speed):
+    """Resample with a per-sample playback rate (tape)."""
+    n = x.shape[-1]
+    sp = as_array(speed, n)
+    pos = np.cumsum(sp)
+    pos = pos[pos < n - 2]
+    if len(pos) < 2:
+        return x[..., :1] * 0.0
+    i0 = np.floor(pos).astype(int)
+    fr = pos - i0
+    if x.ndim == 1:
+        return x[i0] * (1 - fr) + x[i0 + 1] * fr
+    return np.stack([x[c][i0] * (1 - fr) + x[c][i0 + 1] * fr for c in range(2)])
+
+
+def tape_stop(x, start=0.55, end_ratio=0.03, curve=2.2, fade=True, max_stretch=3.0):
+    """The motor cuts: pitch and time wind down together. Slowing down means
+    more output samples than input, so the ramp is laid out in output time."""
+    n = x.shape[-1]
+    m = int(n * max_stretch)
+    t = np.linspace(0.0, 1.0, m)
+    k = np.clip((t - start) / max(1e-6, 1.0 - start), 0.0, 1.0)
+    speed = 1.0 + (end_ratio - 1.0) * k ** curve
+    pos = np.cumsum(speed)
+    keep = pos < n - 2
+    pos = pos[keep]
+    if len(pos) < 2:
+        return x * 0.0
+    i0 = np.floor(pos).astype(int)
+    fr = pos - i0
+    y = (x[i0] * (1 - fr) + x[i0 + 1] * fr) if x.ndim == 1 else \
+        np.stack([x[c][i0] * (1 - fr) + x[c][i0 + 1] * fr for c in range(2)])
+    if fade:
+        m = y.shape[-1]
+        tail = max(1, int(m * 0.25))
+        env = np.ones(m)
+        env[-tail:] = np.linspace(1.0, 0.0, tail) ** 1.5
+        y = y * env
+    return y
+
+
+# -------------------------------------------------------------- rhythm & res
+
+def gate(x, step_sec, pattern, smooth=0.008, floor=0.0):
+    """Trance gate. pattern is a list of 0..1 values, one per step."""
+    n = x.shape[-1]
+    steps = int(np.ceil(n / (step_sec * SR)))
+    vals = np.array([pattern[i % len(pattern)] for i in range(steps)], dtype=float)
+    env = np.repeat(vals, int(round(step_sec * SR)))[:n]
+    if len(env) < n:
+        env = np.concatenate([env, np.full(n - len(env), env[-1] if len(env) else 1.0)])
+    a = np.exp(-1.0 / max(1.0, smooth * SR))
+    env = lfilter([1 - a], [1, -a], env)
+    env = floor + (1 - floor) * env
+    return x * env
+
+
+def comb(x, freq, feedback=0.85, mix=1.0, damp=7000.0):
+    """Tuned resonator - what turns a noise burst into struck metal."""
+    n = x.shape[-1]
+    d = max(2, int(round(SR / max(20.0, freq))))
+    y = x.copy()
+    for i in range(d, n, d):
+        j = min(n, i + d)
+        y[..., i:j] += feedback * biquad(y[..., i - d:i - d + (j - i)], "lp", damp, 0.7)
+    return (1 - mix) * x + mix * y
+
+
+def transient_shape(x, attack=1.0, sustain=1.0, fast=0.003, slow=0.055):
+    """Separate hit from tail and re-weight them."""
+    mono = np.max(np.abs(x), axis=0) if x.ndim > 1 else np.abs(x)
+    af = np.exp(-1.0 / (fast * SR))
+    as_ = np.exp(-1.0 / (slow * SR))
+    ef = lfilter([1 - af], [1, -af], mono)
+    es = lfilter([1 - as_], [1, -as_], mono)
+    diff = ef - es
+    g = 1.0 + attack * np.maximum(diff, 0) / (es + 1e-6) * 0.5 \
+        - (1.0 - sustain) * np.maximum(-diff, 0) / (es + 1e-6) * 0.5
+    g = np.clip(g, 0.2, 4.0)
+    return x * g

@@ -17,8 +17,8 @@ import numpy as np
 from technogen.track import build, process_buses, finalize
 from technogen.mixer import to_wav, to_mp3
 
-BUS_ORDER = ["kick", "kickfar", "sub", "rumble", "drums", "bass", "lead",
-             "voice", "scream", "fx", "pad", "air"]
+from technogen.track import BUSES
+BUS_ORDER = BUSES + ["rumble"]
 
 
 def save_buses(path, buses):

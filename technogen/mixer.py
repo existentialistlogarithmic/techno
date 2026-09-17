@@ -151,14 +151,32 @@ def balance(buses, targets, reference="kick", verbose=True):
 # Octave-band target curve for a hard techno master, dB relative to 40-80 Hz.
 TILT_TARGET = [
     (20, 40, -15.0), (40, 80, 0.0), (80, 160, -4.5), (160, 320, -9.0),
-    (320, 640, -12.0), (640, 1280, -14.0), (1280, 2560, -16.0),
-    (2560, 5120, -18.0), (5120, 10240, -20.5), (10240, 20000, -24.0),
+    (320, 640, -10.5), (640, 1280, -12.5), (1280, 2560, -15.0),
+    (2560, 5120, -17.0), (5120, 10240, -21.0), (10240, 20000, -26.0),
 ]
 
 
-def measure_bands(x, sr=SR):
-    from scipy.signal import welch
+def loud_sections(x, frac=0.4, win=0.5, sr=SR):
+    """The loudest blocks, stitched together.
+
+    Tonal balance has to be judged where the track is loud. Averaged over a
+    whole arrangement, the quiet sections - which are all midrange and no
+    bass - drag the measurement up and the correction then scoops the
+    midrange out of the drops."""
     mono = x.mean(axis=0) if x.ndim > 1 else x
+    w = max(1, int(win * sr))
+    nb = len(mono) // w
+    if nb < 4:
+        return mono
+    blocks = mono[:nb * w].reshape(nb, w)
+    e = np.sqrt(np.mean(blocks ** 2, axis=1))
+    keep = np.argsort(e)[-max(1, int(nb * frac)):]
+    return blocks[np.sort(keep)].reshape(-1)
+
+
+def measure_bands(x, sr=SR, loud_only=True):
+    from scipy.signal import welch
+    mono = loud_sections(x) if loud_only else (x.mean(axis=0) if x.ndim > 1 else x)
     f, P = welch(mono, sr, nperseg=16384)
     return [P[(f >= a) & (f < b)].sum() + 1e-18 for a, b, _ in TILT_TARGET]
 
@@ -201,14 +219,14 @@ def set_loudness(x, target_rms_db=-8.5, win=0.4, top_frac=0.3):
 def master(mix, headroom_db=-1.0, target_rms_db=-7.8, glue=True, verbose=True):
     x = mix
     x = biquad(x, "hp", 27, 0.7)
-    x = tilt_match(x, max_db=8.0, verbose=verbose)
+    x = tilt_match(x, max_db=9.0, verbose=verbose)
     if glue:
         x = compress(x, thresh_db=-18.0, ratio=2.0, attack=0.015, release=0.18, makeup_db=1.5)
     x = tape(x, drive=1.25)
     x = x + 0.20 * biquad(x, "bp", 2600, 0.5)        # presence: leads bite through
     x = peaking(x, 5800, 0.9, 2.5)                   # screech bite
     x = peaking(x, 95, 0.8, 1.5)                     # fill the 63-125 scoop
-    x = x + 0.08 * biquad(x, "hp", 8000, 0.7)        # air
+    x = x + 0.05 * biquad(x, "hp", 8500, 0.7)        # air
     x = set_loudness(x, target_rms_db)
     x = soft_clip(x * 1.02, 0.90)
     x = limiter(x, ceiling=db(headroom_db))
