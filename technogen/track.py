@@ -1,19 +1,22 @@
-"""The arrangement: 'CONCRETE CATHEDRAL' - 150 BPM hard techno, F# minor.
+"""The arrangement: 'CONCRETE CATHEDRAL' - 150 BPM, F# minor.
+
+A lament played by strings, then taken apart by the machine.
 
     bars           section
-    000-015        intro / confession
-    016-031        industrial groove
-    032-047        build 1
-    048-055        pre-drop
-    056-087        DROP 1
-    088-095        transition
-    096-111        sultry mid-section
-    112-127        build 2
-    128-159        DROP 2
-    160-171        breakdown
-    172-179        build 3
-    180-195        DROP 3
-    196-207        outro
+    000-023        lament                 solo violin over a string section
+    024-031        the turn               the strings are put through the machine
+    032-047        industrial groove      struck metal, the kick still small
+    048-063        build 1
+    064-071        pre-drop
+    072-103        DROP 1
+    104-111        transition             tape brake, sub drop, a ghost of the theme
+    112-127        dark mid-section
+    128-143        build 2
+    144-175        DROP 2
+    176-191        breakdown              the violin comes back
+    192-199        build 3
+    200-223        DROP 3                 the theme returns as a distorted lead
+    224-233        outro
 """
 
 import numpy as np
@@ -23,57 +26,76 @@ from .dsp import (SR, biquad, sweep, reverb, delay, widen, tanh_drive, drive_os,
                   pitch_shift_naive, tape_stop, gate, fit, supersaw, transient_shape)
 from . import instruments as I
 from . import texture as T
+from . import strings as ST
 from .mixer import Session, send_reverb, send_delay, master, balance
 
 BPM = 150.0
-BARS = 208
+BARS = 234
 RNG = np.random.default_rng(2024)
 
 BUSES = ["kick", "kickfar", "sub", "rumble", "drums", "metal", "bass", "lead",
-         "voice", "scream", "speech", "breath", "fx", "pad", "air"]
+         "voice", "scream", "speech", "breath", "strings", "solo", "fx", "pad", "air"]
 
-# Where each bus sits relative to the kick, and the band it is measured in.
 TARGETS = {
     "kick":    (0.0, "low"),
     "kickfar": (-11.0, "low"),
     "sub":     (-7.5, "low"),
     "rumble":  (-8.5, "low"),
     "drums":   (1.0, "mid"),
-    "metal":   (1.5, "mid"),
-    "bass":    (1.0, "mid"),
-    "lead":    (5.0, "mid"),
-    "voice":   (0.5, "mid"),
+    "metal":   (-0.5, "mid"),
+    "bass":    (-0.5, "mid"),
+    "lead":    (3.0, "mid"),
+    "voice":   (-0.5, "mid"),
     "scream":  (-2.0, "mid"),
-    "speech":  (2.0, "mid"),
+    "speech":  (1.0, "mid"),
     "breath":  (-7.0, "mid"),
-    "fx":      (0.0, "mid"),
+    "strings": (6.5, "mid"),
+    "solo":    (9.0, "mid"),
+    "fx":      (-1.0, "mid"),
     "pad":     (-5.0, "mid"),
     "air":     (-16.0, "mid"),
 }
 
-# Automation in bars. Holding the low end back through a build is what makes
-# the next drop land; without it more elements just means more noise.
-LOW_WEIGHT = [(0, 0.10), (16, 0.32), (24, 0.40), (32, 0.36), (40, 0.48),
-              (47.9, 0.56), (48, 0.32), (55.9, 0.20), (56, 1.0), (87.9, 1.0),
-              (88, 0.10), (96, 0.40), (104, 0.48), (112, 0.52), (120, 0.62),
-              (127.9, 0.66), (128, 1.0), (159.9, 1.0), (160, 0.10), (168, 0.26),
-              (172, 0.46), (179.9, 0.56), (180, 1.0), (195.9, 1.0), (196, 0.72),
-              (202, 0.56), (206, 0.30), (208, 0.12)]
+LOW_WEIGHT = [(0, 0.02), (24, 0.06), (28, 0.14), (32, 0.48), (40, 0.52), (48, 0.44),
+              (56, 0.52), (63.9, 0.58), (64, 0.34), (71.9, 0.20), (72, 1.0),
+              (103.9, 1.0), (104, 0.08), (112, 0.42), (120, 0.50), (128, 0.54),
+              (136, 0.64), (143.9, 0.68), (144, 1.0), (175.9, 1.0), (176, 0.04),
+              (184, 0.22), (192, 0.48), (199.9, 0.58), (200, 1.0), (223.9, 1.0),
+              (224, 0.74), (229, 0.54), (232, 0.24), (234, 0.08)]
 
-KICK_GAIN = [(0, 0.5), (16, 0.66), (24, 0.74), (32, 0.72), (40, 0.82), (47.9, 0.86),
-             (48, 0.88), (55.9, 0.88), (56, 1.0), (87.9, 1.0), (88, 0.5), (96, 0.74),
-             (104, 0.80), (112, 0.84), (120, 0.90), (127.9, 0.92), (128, 1.0),
-             (159.9, 1.0), (160, 0.6), (172, 0.84), (179.9, 0.9), (180, 1.0),
-             (195.9, 1.0), (196, 0.94), (204, 0.8), (208, 0.4)]
+KICK_GAIN = [(0, 0.35), (28, 0.45), (32, 0.80), (40, 0.84), (48, 0.76), (56, 0.82),
+             (63.9, 0.86), (64, 0.88), (71.9, 0.88), (72, 1.0), (103.9, 1.0),
+             (104, 0.45), (112, 0.74), (120, 0.80), (128, 0.84), (136, 0.90),
+             (143.9, 0.92), (144, 1.0), (175.9, 1.0), (176, 0.5), (184, 0.7),
+             (192, 0.86), (199.9, 0.92), (200, 1.0), (223.9, 1.0), (224, 0.94),
+             (230, 0.78), (234, 0.35)]
 
-KICK_TONE = [(0, 1500), (16, 1800), (24, 2600), (32, 3200), (40, 4200), (47.9, 4800),
-             (48, 5200), (55.9, 5200), (56, 20000), (87.9, 20000), (88, 2200),
-             (96, 6000), (112, 7000), (120, 9000), (127.9, 10000), (128, 20000),
-             (159.9, 20000), (160, 2600), (172, 5000), (179.9, 6000), (180, 20000),
-             (199, 20000), (204, 9000), (208, 2200)]
+KICK_TONE = [(0, 1200), (28, 1500), (32, 2200), (40, 2900), (48, 3600), (56, 4400),
+             (63.9, 4800), (64, 5200), (71.9, 5200), (72, 20000), (103.9, 20000),
+             (104, 2000), (112, 5200), (120, 6500), (128, 7500), (136, 9000),
+             (143.9, 10000), (144, 20000), (175.9, 20000), (176, 2400), (184, 4200),
+             (192, 6000), (199.9, 7000), (200, 20000), (227, 20000), (231, 8000),
+             (234, 2000)]
 
+# ------------------------------------------------------------- the lament
 
-# ---------------------------------------------------------------- palette
+# F# minor. Slow: written in half-time, so one melody beat is two real beats.
+LAMENT_A = [(73, 3), (71, 1), (69, 4),
+            (71, 2), (69, 2), (68, 4),
+            (66, 4), (69, 2), (68, 2),
+            (66, 5), (None, 3)]
+
+LAMENT_B = [(78, 3), (76, 1), (74, 4),
+            (73, 2), (71, 2), (69, 4),
+            (68, 4), (66, 4),
+            (64, 6), (None, 2)]
+
+# i - VI - III - VII, two bars each
+LAMENT_CHORDS = [([42, 54, 57, 61], 8), ([38, 50, 57, 62], 8),
+                 ([45, 52, 57, 64], 8), ([40, 52, 56, 64], 8)]
+
+# the descending lament tetrachord, the oldest sad gesture there is
+LAMENT_BASS = [(42, 8), (40, 8), (38, 8), (37, 8)]
 
 def build_palette():
     p = {}
@@ -190,6 +212,31 @@ def build_palette():
     p["forgive_close"], p["forgive_whisper"] = fg["close"], fg["whisper"]
     sn = T.speech_layers("assets/sins.wav", shift=1.02, seed=3)
     p["sins_close"], p["sins_choir"] = sn["close"], sn["choir"]
+
+    # --- rave
+    p["siren"] = T.siren(4.8, 380, 1500, rate=0.42, drive=6)
+    p["siren_s"] = T.siren(2.0, 500, 2100, rate=0.9, drive=7)
+    p["horn"] = T.war_horn(42, 3.0, drive=7, growl=0.5)
+    p["horn_hi"] = T.war_horn(49, 2.4, drive=8, growl=0.6)
+    p["whoosh_up"] = T.whoosh(2.4, True, seed=1)
+    p["whoosh_up_l"] = T.whoosh(4.8, True, seed=2)
+    p["whoosh_dn"] = T.whoosh(2.2, False, seed=3)
+
+    # --- the lament
+    p["violin_a"] = ST.phrase(LAMENT_A, BPM, beat_unit=2.0, vel=0.72, seed=1)
+    p["violin_b"] = ST.phrase(LAMENT_B, BPM, beat_unit=2.0, vel=0.78, seed=2)
+    p["violin_a2"] = ST.phrase(LAMENT_A, BPM, beat_unit=2.0, vel=0.80, seed=5,
+                               bright=1.15)
+    p["strings_a"] = ST.chords(LAMENT_CHORDS, BPM, players=3, vel=0.55, seed=3)
+    p["strings_b"] = ST.chords(LAMENT_CHORDS, BPM, players=4, vel=0.65, seed=4)
+    p["cello"] = ST.phrase(LAMENT_BASS, BPM, beat_unit=1.0, vel=0.62,
+                           body=ST.CELLO_BODY, seed=6, vib_depth=0.004)
+    # the theme after the machine has had it
+    p["violin_dead"] = ST.desecrate(p["violin_a2"], 1.0, cutoff=3000, drive=8)
+    p["strings_dead"] = ST.desecrate(p["strings_b"], 1.0, cutoff=2200, drive=7)
+    for i, amt in enumerate((0.25, 0.5, 0.75, 1.0)):
+        p[f"strings_rot{i}"] = ST.desecrate(p["strings_a"], amt,
+                                            cutoff=3400 - 700 * i, drive=4 + 2 * i)
 
     # a bar of the groove, pre-mixed, so the transition can brake it like tape
     p["groove_bar"] = _groove_bar(p)
@@ -408,268 +455,317 @@ def fill(s, p, b, kind="metal"):
 
 # ---------------------------------------------------------------- sections
 
+
+# ---------------------------------------------------------- transition kit
+
+def approach(s, p, bar, power=1.0, bars=2, steam=True):
+    """Lead into a section start at `bar`: rise, then a gap to fall into."""
+    s.place("fx", p["rev_swell"], bar - bars, 0, gain=0.34 * power)
+    s.place("fx", p["whoosh_up"], bar - 1.5, 0, gain=0.40 * power)
+    if steam:
+        s.place("metal", p["steam"], bar - 1, 8, gain=0.34 * power)
+    s.place("breath", p["breath_in"], bar - 1, 12, gain=0.42 * power, pan_=0.2)
+
+
+def enter(s, p, bar, power=1.0, horn=False, siren=False):
+    """Mark a section start so the ear knows something changed."""
+    s.place("fx", p["impact"], bar, 0, gain=0.70 * power)
+    s.place("metal", p["clang"], bar, 0, gain=0.50 * power)
+    s.place("fx", p["whoosh_dn"], bar, 0, gain=0.34 * power)
+    if horn:
+        s.place("lead", p["horn"], bar, 0, gain=0.34 * power)
+    if siren:
+        s.place("fx", p["siren"], bar, 0, gain=0.26 * power)
+
+
+def exit_(s, p, bar, power=1.0, drop=True):
+    """Close a section: downlifter, and optionally pull the floor out."""
+    s.place("fx", p["down"], bar, 12, gain=0.30 * power)
+    if drop:
+        s.place("fx", p["sub_drop"], bar, 12, gain=0.40 * power)
+
+
+# ---------------------------------------------------------------- sections
+
 def build(verbose=True):
     def log(msg):
         if verbose:
             print(f"  {msg}", flush=True)
 
-    log("rendering sound palette...")
+    log("rendering sound palette (strings are slow)...")
     p = build_palette()
-    s = Session(BPM, BARS, tail=7.0)
+    s = Session(BPM, BARS, tail=8.0)
 
-    # ------------------------------------------------ 000-015 intro/confession
-    log("intro / confession")
-    s.place("air", I.room_tone(s.dur, level=0.09), 0, 0, gain=1.0)
-    s.place("metal", p["machine_lo"], 0, 0, gain=0.55)
-    s.place("metal", far(p["machine"], 1400), 4, 0, gain=0.62)
-    s.place("metal", far(p["machine"], 2200), 12, 0, gain=0.70)
+    # --------------------------------------------------------- 000-023 lament
+    log("lament")
+    s.place("air", I.room_tone(s.dur, level=0.075), 0, 0, gain=1.0)
+    s.place("metal", p["machine_lo"], 0, 0, gain=0.30)
+    s.place("strings", p["strings_a"], 0, 0, gain=1.45)
+    s.place("strings", p["cello"], 0, 0, gain=1.15)
+    s.place("solo", p["violin_a"], 4, 0, gain=1.0, pan_=-0.08)
+    s.place("strings", p["strings_a"], 8, 0, gain=1.35)
+    s.place("strings", p["cello"], 8, 0, gain=1.05)
+    s.place("speech", p["say_close"], 12, 4, gain=0.78)
+    s.place("speech", p["say_whisper"], 12, 4.3, gain=0.40, pan_=-0.55)
+    s.place("speech", far(p["say_radio"], 3000), 12, 4, gain=0.16, pan_=0.3)
+    s.place("strings", p["strings_a"], 16, 0, gain=1.40)
+    s.place("strings", p["cello"], 16, 0, gain=1.10)
+    s.place("solo", p["violin_b"], 16, 0, gain=1.0, pan_=0.06)
+    s.place("metal", far(p["machine"], 1300), 12, 0, gain=0.42)
+    s.place("scream", far(p["help_far"], 1100), 10, 6, gain=0.26, pan_=-0.45)
+    s.place("metal", p["scrape_l"], 19, 12, gain=0.42, pan_=-0.5)
+    s.place("breath", p["breath_out"], 21, 8, gain=0.40, pan_=0.3)
 
-    s.place("speech", p["say_close"], 1, 4, gain=0.88, pan_=0.0)
-    s.place("speech", p["say_whisper"], 1, 4.35, gain=0.45, pan_=-0.55)
-    s.place("speech", p["say_whisper"], 1, 3.7, gain=0.38, pan_=0.55)
-    s.place("speech", far(p["say_radio"], 3200), 1, 4, gain=0.18, pan_=0.25)
-
-    s.place("scream", far(p["help_far"], 1200), 6, 10, gain=0.34, pan_=-0.45)
-    s.place("scream", far(p["cry"], 2100), 9, 6, gain=0.44, pan_=0.42)
-    s.place("scream", far(p["help_mid"], 4200), 12, 8, gain=0.62, pan_=-0.18)
-    s.place("scream", far(p["help_panic"], 6800), 14, 10, gain=0.70, pan_=0.22)
-
-    s.place("metal", p["scrape_l"], 3, 12, gain=0.85, pan_=-0.5)
-    s.place("metal", p["chain"], 5, 2, gain=0.80, pan_=0.45)
-    s.place("metal", p["steam"], 7, 8, gain=0.90, pan_=-0.3)
-    s.place("metal", p["clang"], 8, 0, gain=1.15, pan_=0.1)
-    s.place("metal", p["chain"], 11, 6, gain=0.75, pan_=-0.4)
-    s.place("metal", p["steam_s"], 13, 4, gain=0.85, pan_=0.5)
-    for b in range(4, 16):
-        for st in range(0, 16, 8 if b < 8 else 4):
-            s.place("kickfar", p["kick_soft"], b, st,
-                    gain=min(0.55, 0.16 + 0.035 * (b - 4)))
+    # ----------------------------------------------------------- 024-031 turn
+    log("the turn: the machine takes the theme")
+    for i, b in enumerate((24, 26, 28, 30)):
+        s.place("strings", p[f"strings_rot{i}"], b, 0, gain=0.55 + 0.12 * i)
+    s.place("solo", ST.desecrate(p["violin_a"], 0.55, 3200, 5), 24, 0, gain=0.9)
+    s.place("metal", p["machine"], 24, 0, gain=0.55)
+    s.place("metal", p["machine"], 28, 0, gain=0.75)
+    s.place("scream", far(p["cry"], 2400), 25, 6, gain=0.46, pan_=0.4)
+    s.place("metal", p["steam"], 26, 8, gain=0.55, pan_=-0.3)
+    s.place("metal", p["chain"], 27, 2, gain=0.6, pan_=0.45)
+    for b in range(26, 32):
+        for st in ((0, 8) if b < 29 else (0, 4, 8, 12)):
+            s.place("kickfar", p["kick_soft"], b, st, gain=0.22 + 0.035 * (b - 26))
             s.mark_kick(b, st)
-    s.place("fx", p["rev_swell"], 14, 8, gain=0.26)
-    s.place("breath", p["breath_in"], 15, 12, gain=0.5, pan_=0.2)
+    s.place("fx", p["whoosh_up_l"], 29, 0, gain=0.42)
+    s.place("lead", p["horn"], 30, 0, gain=0.42)
+    approach(s, p, 32, power=1.0)
 
-    # ----------------------------------------------- 016-031 industrial groove
+    # --------------------------------------------- 032-047 industrial groove
     log("industrial groove")
-    lay_kicks(s, p, 16, 32, key="kick", gain=0.86, ghosts=True, rolls=False)
-    for b in range(16, 32, 4):
+    enter(s, p, 32, power=0.9)
+    lay_kicks(s, p, 32, 48, key="kick", gain=0.88, ghosts=True, rolls=False)
+    for b in range(32, 48, 4):
         s.place("metal", p["conveyor"], b, 0, gain=0.62)
-    lay_metal(s, p, 16, 32, gain=0.95)
-    lay_hats(s, p, 16, 24, density=4, open_off=False, gain=0.30)
-    lay_hats(s, p, 24, 32, density=8, gain=0.38)
-    lay_perc(s, p, 20, 32, gain=0.6, claps=True)
-    s.place("metal", p["machine"], 16, 0, gain=0.75)
-    s.place("breath", p["breath_out"], 19, 12, gain=0.45, pan_=-0.3)
-    s.place("voice", p["whisper"], 22, 0, gain=0.22, pan_=0.45)
-    s.place("speech", p["forgive_whisper"], 27, 8, gain=0.5, pan_=-0.35)
-    s.place("breath", p["sigh_a"], 29, 4, gain=0.42, pan_=0.3)
-    for b in (23, 31):
-        fill(s, p, b, "metal")
-
-    # ------------------------------------------------------- 032-047 build 1
-    log("build 1")
-    lay_kicks(s, p, 32, 48, key="kick", gain=0.94, ghosts=True, rolls=False)
-    lay_hats(s, p, 32, 40, density=8, gain=0.40)
-    lay_hats(s, p, 40, 48, density=16, gain=0.48, tips=True)
-    lay_perc(s, p, 32, 48, gain=0.8)
-    lay_metal(s, p, 32, 48, gain=0.45)
-    lay_acid(s, p, 36, 48, ACID_A, gain=0.40, cutoff=400, env_mod=2600, res=0.80, drive=5)
-    s.place("voice", p["vstab_low"], 39, 12, gain=0.3, pan_=-0.2)
-    s.place("fx", p["riser_n2"], 40, 0, gain=0.26)
-    s.place("lead", p["scr_up"], 46, 8, gain=0.26, pan_=-0.25)
+    lay_metal(s, p, 32, 48, gain=0.95)
+    lay_hats(s, p, 32, 40, density=4, open_off=False, gain=0.30)
+    lay_hats(s, p, 40, 48, density=8, gain=0.38)
+    lay_perc(s, p, 36, 48, gain=0.6, claps=True)
+    s.place("metal", p["machine"], 32, 0, gain=0.75)
+    s.place("strings", p["strings_dead"], 40, 0, gain=0.20)
+    s.place("breath", p["breath_out"], 35, 12, gain=0.45, pan_=-0.3)
+    s.place("speech", p["forgive_whisper"], 43, 8, gain=0.5, pan_=-0.35)
     for b in (39, 47):
+        fill(s, p, b, "metal")
+    approach(s, p, 48, power=0.7, steam=False)
+
+    # ------------------------------------------------------- 048-063 build 1
+    log("build 1")
+    lay_kicks(s, p, 48, 64, key="kick", gain=0.94, ghosts=True, rolls=False)
+    lay_hats(s, p, 48, 56, density=8, gain=0.40)
+    lay_hats(s, p, 56, 64, density=16, gain=0.48, tips=True)
+    lay_perc(s, p, 48, 64, gain=0.8)
+    lay_metal(s, p, 48, 64, gain=0.55)
+    lay_acid(s, p, 52, 64, ACID_A, gain=0.40, cutoff=400, env_mod=2600, res=0.80, drive=5)
+    s.place("voice", p["vstab_low"], 55, 12, gain=0.3, pan_=-0.2)
+    s.place("fx", p["riser_n2"], 56, 0, gain=0.26)
+    s.place("lead", p["scr_up"], 62, 8, gain=0.26, pan_=-0.25)
+    for b in (55, 63):
         fill(s, p, b, "tom")
 
-    # ----------------------------------------------------- 048-055 pre-drop
+    # ----------------------------------------------------- 064-071 pre-drop
     log("pre-drop")
-    lay_kicks(s, p, 48, 52, key="kick", gain=1.0, ghosts=True, rolls=False)
-    lay_hats(s, p, 48, 52, density=16, gain=0.48)
-    lay_perc(s, p, 48, 52, gain=0.8)
-    lay_acid(s, p, 48, 54, ACID_A, gain=0.46, cutoff=540, env_mod=3400, res=0.84, drive=6)
-    s.place("fx", p["riser_n"], 52, 0, gain=0.42)
-    s.place("fx", p["riser_t"], 52, 0, gain=0.30)
-    snare_roll(s, p, 52, bars=3, gain=0.62)
-    s.place("lead", p["scr_long"], 53, 0, gain=0.34, pan_=0.1)
-    s.place("metal", p["steam"], 54, 0, gain=0.34)
-    s.place("fx", p["rev_swell"], 54, 0, gain=0.38)
-    s.place("fx", p["down"], 55, 12, gain=0.18)
+    lay_kicks(s, p, 64, 68, key="kick", gain=1.0, ghosts=True, rolls=False)
+    lay_hats(s, p, 64, 68, density=16, gain=0.48)
+    lay_perc(s, p, 64, 68, gain=0.8)
+    lay_acid(s, p, 64, 70, ACID_A, gain=0.46, cutoff=540, env_mod=3400, res=0.84, drive=6)
+    s.place("fx", p["riser_n"], 68, 0, gain=0.42)
+    s.place("fx", p["riser_t"], 68, 0, gain=0.30)
+    s.place("fx", p["whoosh_up_l"], 69, 0, gain=0.40)
+    snare_roll(s, p, 68, bars=3, gain=0.62)
+    s.place("lead", p["scr_long"], 69, 0, gain=0.34, pan_=0.1)
+    s.place("metal", p["steam"], 70, 0, gain=0.38)
+    s.place("fx", p["rev_swell"], 70, 0, gain=0.40)
+    exit_(s, p, 71, power=0.7, drop=False)
 
-    # ------------------------------------------------------- 056-087 DROP 1
+    # ------------------------------------------------------- 072-103 DROP 1
     log("DROP 1")
-    s.place("fx", p["impact"], 56, 0, gain=0.72)
-    s.place("metal", p["clang"], 56, 0, gain=0.5)
-    lay_kicks(s, p, 56, 88, key="kick", gain=1.0, ghosts=True, rolls=True)
-    lay_hats(s, p, 56, 88, density=16, gain=0.5, tips=True)
-    lay_perc(s, p, 56, 88, gain=1.0, claps=True)
-    lay_metal(s, p, 56, 88, gain=0.5)
-    lay_acid(s, p, 56, 72, ACID_A, gain=0.5, cutoff=520, env_mod=3600, res=0.85, drive=7)
-    lay_acid(s, p, 72, 88, ACID_B, gain=0.52, cutoff=600, env_mod=4200, res=0.87, drive=8)
-    lay_hoover(s, p, 56, 88, gain=0.34)
-    for b in range(56, 88, 8):
+    enter(s, p, 72, power=1.0, horn=True)
+    lay_kicks(s, p, 72, 104, key="kick", gain=1.0, ghosts=True, rolls=True)
+    lay_hats(s, p, 72, 104, density=16, gain=0.5, tips=True)
+    lay_perc(s, p, 72, 104, gain=1.0, claps=True)
+    lay_metal(s, p, 72, 104, gain=0.5)
+    lay_acid(s, p, 72, 88, ACID_A, gain=0.5, cutoff=520, env_mod=3600, res=0.85, drive=7)
+    lay_acid(s, p, 88, 104, ACID_B, gain=0.52, cutoff=600, env_mod=4200, res=0.87, drive=8)
+    lay_hoover(s, p, 72, 104, gain=0.34)
+    for b in range(72, 104, 8):
         s.place("lead", p["scr_up"], b + 7, 8, gain=0.30, pan_=RNG.uniform(-0.3, 0.3))
         fill(s, p, b + 7, "metal")
-    for b in range(60, 88, 8):
+    for b in range(76, 104, 8):
         s.place("voice", p["vstab"], b, 12, gain=0.34, pan_=0.15)
         s.place("voice", p["vstab2"], b + 2, 6, gain=0.26, pan_=-0.25)
-    s.place("lead", p["scr_ud"], 71, 8, gain=0.34, pan_=-0.15)
-    s.place("speech", p["sins_choir"], 76, 0, gain=0.42, pan_=0.0)
-    s.place("fx", p["impact"], 72, 0, gain=0.4)
-    s.place("breath", p["breath_short"], 79, 14, gain=0.4, pan_=0.4)
+    s.place("fx", p["siren"], 87, 0, gain=0.24)
+    s.place("lead", p["scr_ud"], 87, 8, gain=0.34, pan_=-0.15)
+    s.place("speech", p["sins_choir"], 92, 0, gain=0.42)
+    s.place("fx", p["impact"], 88, 0, gain=0.4)
+    s.place("strings", p["strings_dead"], 96, 0, gain=0.18)
+    s.place("breath", p["breath_short"], 95, 14, gain=0.4, pan_=0.4)
+    exit_(s, p, 103, power=1.0)
 
-    # ---------------------------------------------------- 088-095 transition
+    # ---------------------------------------------------- 104-111 transition
     log("transition")
-    s.place("fx", T.reverse_tail(p["clang"], 2.8), 86, 8, gain=0.5)
+    s.place("fx", T.reverse_tail(p["clang"], 2.8), 102, 8, gain=0.5)
     s.place("drums", tape_stop(p["groove_bar"], start=0.12, end_ratio=0.035,
-                               curve=1.7, max_stretch=2.6), 88, 0, gain=0.85)
-    s.place("fx", p["sub_drop"], 88, 0, gain=0.62)
-    s.place("fx", p["noise_fall"], 88, 2, gain=0.34)
-    s.place("metal", p["steam"], 89, 6, gain=0.34, pan_=-0.35)
-    s.place("breath", p["breath_out"], 89, 8, gain=0.62, pan_=0.25)
-    s.place("voice", p["moan_close"], 90, 0, gain=0.52, pan_=-0.2)
-    s.place("pad", p["pad_sex"], 90, 0, gain=0.70)
-    s.place("breath", p["sigh_b"], 92, 4, gain=0.55, pan_=0.3)
-    s.place("voice", p["moan_a"], 93, 8, gain=0.44, pan_=0.35)
-    s.place("speech", p["forgive_close"], 94, 0, gain=0.6, pan_=0.0)
-    s.place("fx", p["rev_swell"], 94, 8, gain=0.34)
-    s.place("breath", p["breath_in"], 95, 12, gain=0.6, pan_=-0.15)
-    for b in range(92, 96):
+                               curve=1.7, max_stretch=2.6), 104, 0, gain=0.85)
+    s.place("fx", p["sub_drop"], 104, 0, gain=0.62)
+    s.place("fx", p["noise_fall"], 104, 2, gain=0.34)
+    s.place("metal", p["steam"], 105, 6, gain=0.40, pan_=-0.35)
+    s.place("breath", p["breath_out"], 105, 8, gain=0.62, pan_=0.25)
+    s.place("solo", ST.desecrate(p["violin_a"], 0.35, 4000, 4), 106, 0, gain=0.30)
+    s.place("voice", p["moan_close"], 106, 8, gain=0.48, pan_=-0.2)
+    s.place("pad", p["pad_sex"], 106, 0, gain=0.70)
+    s.place("breath", p["sigh_b"], 108, 4, gain=0.55, pan_=0.3)
+    s.place("speech", p["forgive_close"], 110, 0, gain=0.58)
+    s.place("breath", p["breath_in"], 111, 12, gain=0.6, pan_=-0.15)
+    for b in range(108, 112):
         for st in (0, 8):
             s.place("kickfar", p["kick_soft"], b, st, gain=0.42)
             s.mark_kick(b, st)
 
-    # --------------------------------------------------- 096-111 sultry mid
-    log("sultry mid-section")
-    lay_kicks(s, p, 96, 112, key="kick", gain=0.9, ghosts=False, rolls=False)
-    lay_shaker(s, p, 96, 112, gain=0.30, swing=0.055)
-    lay_hats(s, p, 96, 104, density=8, open_off=True, gain=0.32, swing=0.05)
-    lay_hats(s, p, 104, 112, density=16, gain=0.40, swing=0.045, tips=True)
-    lay_perc(s, p, 98, 112, gain=0.55, claps=True, tight=True, rims=True)
-    lay_acid(s, p, 96, 112, ACID_SEX, gain=0.48, cutoff=330, env_mod=2100,
+    # ----------------------------------------------------- 112-127 dark mid
+    log("dark mid-section")
+    lay_kicks(s, p, 112, 128, key="kick", gain=0.9, ghosts=False, rolls=False)
+    lay_shaker(s, p, 112, 128, gain=0.30, swing=0.055)
+    lay_hats(s, p, 112, 120, density=8, open_off=True, gain=0.32, swing=0.05)
+    lay_hats(s, p, 120, 128, density=16, gain=0.40, swing=0.045, tips=True)
+    lay_perc(s, p, 114, 128, gain=0.55, claps=True, tight=True)
+    lay_acid(s, p, 112, 128, ACID_SEX, gain=0.48, cutoff=330, env_mod=2100,
              res=0.86, drive=4, decay=0.30)
-    lay_gated_pad(s, p, "pad_sex", 96, 8, gain=0.85)
-    lay_gated_pad(s, p, "pad_sex", 104, 8, gain=0.80,
+    lay_gated_pad(s, p, "pad_sex", 112, 8, gain=0.85)
+    lay_gated_pad(s, p, "pad_sex", 120, 8, gain=0.80,
                   pattern=(1, 0, .6, .8, 0, 1, .4, 0))
-    for b, st, key, g, pn in [(97, 8, "moan_close", 0.44, -0.3), (100, 0, "sigh_a", 0.46, 0.35),
-                              (102, 12, "breath_short", 0.5, -0.4), (105, 4, "moan_c", 0.40, 0.25),
-                              (108, 0, "sigh_b", 0.44, -0.2), (110, 8, "moan_a", 0.42, 0.4)]:
+    s.place("strings", ST.desecrate(p["strings_a"], 0.5, 2600, 5), 116, 0, gain=0.26)
+    for b, st, key, g, pn in [(113, 8, "moan_close", 0.44, -0.3), (116, 0, "sigh_a", 0.46, 0.35),
+                              (118, 12, "breath_short", 0.5, -0.4), (121, 4, "moan_c", 0.40, 0.25),
+                              (124, 0, "sigh_b", 0.44, -0.2), (126, 8, "moan_a", 0.42, 0.4)]:
         s.place("breath" if key.startswith(("sigh", "breath")) else "voice",
                 p[key], b, st, gain=g, pan_=pn)
-    s.place("metal", p["conveyor2"], 104, 0, gain=0.5)
-    s.place("metal", p["conveyor2"], 108, 0, gain=0.5)
-    s.place("speech", p["say_whisper"], 106, 0, gain=0.34, pan_=0.5)
-    for b in (103, 111):
+    s.place("metal", p["conveyor2"], 120, 0, gain=0.5)
+    s.place("metal", p["conveyor2"], 124, 0, gain=0.5)
+    s.place("speech", p["say_whisper"], 122, 0, gain=0.34, pan_=0.5)
+    for b in (119, 127):
         fill(s, p, b, "rev")
 
-    # -------------------------------------------------------- 112-127 build 2
+    # -------------------------------------------------------- 128-143 build 2
     log("build 2")
-    lay_kicks(s, p, 112, 124, key="kick", gain=0.96, ghosts=True, rolls=False)
-    lay_hats(s, p, 112, 120, density=8, gain=0.40)
-    lay_hats(s, p, 120, 128, density=16, gain=0.50, tips=True)
-    lay_perc(s, p, 112, 128, gain=0.85)
-    lay_metal(s, p, 112, 128, gain=0.5)
-    lay_acid(s, p, 112, 128, ACID_B, gain=0.46, cutoff=460, env_mod=3800, res=0.86, drive=7)
-    lay_hoover(s, p, 120, 124, gain=0.26, stabs=False)
-    s.place("fx", p["riser_n2"], 120, 0, gain=0.34)
-    s.place("fx", p["riser_t2"], 120, 0, gain=0.26)
-    s.place("fx", p["riser_n"], 124, 0, gain=0.46)
-    s.place("fx", p["riser_t"], 124, 0, gain=0.34)
-    snare_roll(s, p, 124, bars=3, gain=0.7)
-    s.place("lead", p["scr_long"], 125, 0, gain=0.36, pan_=-0.1)
-    s.place("voice", p["vstab"], 123, 8, gain=0.34)
-    s.place("metal", p["steam"], 126, 0, gain=0.36)
-    s.place("fx", p["rev_swell"], 126, 0, gain=0.42)
+    lay_kicks(s, p, 128, 140, key="kick", gain=0.96, ghosts=True, rolls=False)
+    lay_hats(s, p, 128, 136, density=8, gain=0.40)
+    lay_hats(s, p, 136, 144, density=16, gain=0.50, tips=True)
+    lay_perc(s, p, 128, 144, gain=0.85)
+    lay_metal(s, p, 128, 144, gain=0.5)
+    lay_acid(s, p, 128, 144, ACID_B, gain=0.46, cutoff=460, env_mod=3800, res=0.86, drive=7)
+    lay_hoover(s, p, 136, 140, gain=0.26, stabs=False)
+    s.place("fx", p["riser_n2"], 136, 0, gain=0.34)
+    s.place("fx", p["riser_t2"], 136, 0, gain=0.26)
+    s.place("fx", p["riser_n"], 140, 0, gain=0.46)
+    s.place("fx", p["whoosh_up_l"], 141, 0, gain=0.42)
+    snare_roll(s, p, 140, bars=3, gain=0.7)
+    s.place("lead", p["scr_long"], 141, 0, gain=0.36, pan_=-0.1)
+    s.place("voice", p["vstab"], 139, 8, gain=0.34)
+    s.place("metal", p["steam"], 142, 0, gain=0.38)
+    s.place("fx", p["rev_swell"], 142, 0, gain=0.44)
+    exit_(s, p, 143, power=0.8, drop=False)
 
-    # ------------------------------------------------------- 128-159 DROP 2
+    # ------------------------------------------------------- 144-175 DROP 2
     log("DROP 2")
-    s.place("fx", p["impact"], 128, 0, gain=0.8)
-    s.place("metal", p["clang"], 128, 0, gain=0.55)
-    lay_kicks(s, p, 128, 160, key="kick_hard", gain=1.0, ghosts=True, rolls=True)
-    lay_hats(s, p, 128, 160, density=16, gain=0.54, tips=True)
-    lay_perc(s, p, 128, 160, gain=1.0, claps=True, rides=True)
-    lay_metal(s, p, 128, 160, gain=0.55)
-    lay_acid(s, p, 128, 144, ACID_B, gain=0.54, cutoff=640, env_mod=4400, res=0.88, drive=9)
-    lay_acid(s, p, 144, 160, ACID_C, gain=0.56, cutoff=700, env_mod=4800, res=0.90, drive=10)
-    lay_hoover(s, p, 128, 144, gain=0.34)
-    lay_hoover(s, p, 144, 160, gain=0.34, riff=HOOVER_RIFF2)
-    lay_lead_screech(s, p, 136, 152, gain=0.34)
-    for b in range(128, 160, 8):
+    enter(s, p, 144, power=1.1, horn=True, siren=True)
+    lay_kicks(s, p, 144, 176, key="kick_hard", gain=1.0, ghosts=True, rolls=True)
+    lay_hats(s, p, 144, 176, density=16, gain=0.54, tips=True)
+    lay_perc(s, p, 144, 176, gain=1.0, claps=True, rides=True)
+    lay_metal(s, p, 144, 176, gain=0.55)
+    lay_acid(s, p, 144, 160, ACID_B, gain=0.54, cutoff=640, env_mod=4400, res=0.88, drive=9)
+    lay_acid(s, p, 160, 176, ACID_C, gain=0.56, cutoff=700, env_mod=4800, res=0.90, drive=10)
+    lay_hoover(s, p, 144, 160, gain=0.34)
+    lay_hoover(s, p, 160, 176, gain=0.34, riff=HOOVER_RIFF2)
+    lay_lead_screech(s, p, 152, 168, gain=0.34)
+    for b in range(144, 176, 8):
         s.place("lead", p["scr_up"], b + 7, 8, gain=0.32, pan_=RNG.uniform(-0.3, 0.3))
         s.place("voice", p["vstab2"], b + 3, 12, gain=0.28, pan_=RNG.uniform(-0.3, 0.3))
         fill(s, p, b + 7, "metal")
-    s.place("speech", p["sins_choir"], 142, 0, gain=0.5)
-    s.place("voice", p["vstab_low"], 135, 8, gain=0.34, pan_=-0.2)
-    s.place("scream", far(p["cry_short"], 7000), 151, 14, gain=0.5, pan_=0.25)
-    s.place("lead", p["scr_ud"], 151, 8, gain=0.36, pan_=0.15)
-    s.place("fx", p["impact"], 144, 0, gain=0.45)
-    s.place("fx", p["down"], 159, 12, gain=0.32)
+    s.place("speech", p["sins_choir"], 158, 0, gain=0.5)
+    s.place("strings", p["strings_dead"], 164, 0, gain=0.20)
+    s.place("lead", p["horn_hi"], 168, 0, gain=0.34)
+    s.place("scream", far(p["cry_short"], 7000), 167, 14, gain=0.5, pan_=0.25)
+    s.place("fx", p["siren_s"], 171, 8, gain=0.26)
+    s.place("fx", p["impact"], 160, 0, gain=0.45)
+    exit_(s, p, 175, power=1.0)
 
-    # ----------------------------------------------------- 160-171 breakdown
-    log("breakdown")
-    s.place("pad", p["pad_dark"], 160, 0, gain=0.42)
-    s.place("speech", p["say_choir"], 161, 0, gain=0.58)
-    s.place("speech", p["say_whisper"], 161, 0.5, gain=0.40, pan_=-0.5)
-    s.place("voice", p["moan_b"], 163, 8, gain=0.42, pan_=0.26)
-    s.place("breath", p["sigh_b"], 165, 0, gain=0.46, pan_=-0.3)
-    s.place("scream", far(p["help_far"], 1700), 166, 4, gain=0.42, pan_=0.45)
-    s.place("voice", p["moan_c"], 167, 8, gain=0.38, pan_=-0.25)
-    s.place("pad", p["pad_b"], 166, 0, gain=0.34)
-    s.place("voice", p["whisper2"], 168, 4, gain=0.3, pan_=0.4)
-    s.place("metal", p["machine_lo"], 160, 0, gain=0.6)
-    s.place("metal", p["chain"], 169, 2, gain=0.7, pan_=-0.4)
-    for b in range(166, 172):
+    # ----------------------------------------------------- 176-191 breakdown
+    log("breakdown: the violin returns")
+    s.place("fx", T.reverse_tail(p["impact"], 3.2), 174, 8, gain=0.45)
+    s.place("pad", p["pad_dark"], 176, 0, gain=0.42)
+    s.place("strings", p["strings_b"], 176, 0, gain=1.40)
+    s.place("strings", p["cello"], 176, 0, gain=1.10)
+    s.place("solo", p["violin_a2"], 178, 0, gain=1.0, pan_=-0.05)
+    s.place("speech", p["say_choir"], 184, 0, gain=0.52)
+    s.place("strings", p["strings_b"], 184, 0, gain=1.30)
+    s.place("voice", p["moan_b"], 182, 8, gain=0.38, pan_=0.26)
+    s.place("breath", p["sigh_b"], 187, 0, gain=0.44, pan_=-0.3)
+    s.place("scream", far(p["help_far"], 1700), 186, 4, gain=0.40, pan_=0.45)
+    s.place("metal", p["machine_lo"], 176, 0, gain=0.5)
+    for b in range(186, 192):
         s.place("drums", p["rim"], b, 6, gain=0.16, pan_=RNG.uniform(-0.6, 0.6))
         for st in (0, 8):
-            s.place("kickfar", p["kick_soft"], b, st, gain=0.4 + 0.035 * (b - 166))
+            s.place("kickfar", p["kick_soft"], b, st, gain=0.4 + 0.035 * (b - 186))
             s.mark_kick(b, st)
 
-    # -------------------------------------------------------- 172-179 build 3
+    # -------------------------------------------------------- 192-199 build 3
     log("build 3")
-    lay_kicks(s, p, 172, 178, key="kick", gain=0.94, ghosts=True, rolls=False)
-    lay_hats(s, p, 172, 180, density=16, gain=0.48, tips=True)
-    lay_perc(s, p, 172, 180, gain=0.8)
-    lay_metal(s, p, 172, 180, gain=0.5)
-    lay_acid(s, p, 172, 179, ACID_C, gain=0.5, cutoff=600, env_mod=4200, res=0.88, drive=8)
-    s.place("fx", p["riser_n"], 176, 0, gain=0.48)
-    s.place("fx", p["riser_t"], 176, 0, gain=0.36)
-    snare_roll(s, p, 176, bars=3, gain=0.76)
-    s.place("lead", p["scr_evil"], 177, 0, gain=0.38, pan_=0.1)
-    s.place("metal", p["steam"], 178, 0, gain=0.38)
-    s.place("fx", p["rev_swell"], 178, 0, gain=0.44)
-    s.place("fx", p["down"], 179, 12, gain=0.2)
+    lay_kicks(s, p, 192, 198, key="kick", gain=0.94, ghosts=True, rolls=False)
+    lay_hats(s, p, 192, 200, density=16, gain=0.48, tips=True)
+    lay_perc(s, p, 192, 200, gain=0.8)
+    lay_metal(s, p, 192, 200, gain=0.5)
+    lay_acid(s, p, 192, 199, ACID_C, gain=0.5, cutoff=600, env_mod=4200, res=0.88, drive=8)
+    s.place("strings", ST.desecrate(p["strings_b"], 0.6, 2800, 6), 192, 0, gain=0.26)
+    s.place("fx", p["riser_n"], 196, 0, gain=0.48)
+    s.place("fx", p["riser_t"], 196, 0, gain=0.36)
+    s.place("fx", p["whoosh_up_l"], 197, 0, gain=0.46)
+    snare_roll(s, p, 196, bars=3, gain=0.76)
+    s.place("lead", p["scr_evil"], 197, 0, gain=0.38, pan_=0.1)
+    s.place("metal", p["steam"], 198, 0, gain=0.40)
+    s.place("fx", p["rev_swell"], 198, 0, gain=0.46)
+    exit_(s, p, 199, power=0.9, drop=False)
 
-    # -------------------------------------------------------- 180-195 DROP 3
-    log("DROP 3")
-    s.place("fx", p["impact"], 180, 0, gain=0.85)
-    s.place("metal", p["clang"], 180, 0, gain=0.6)
-    lay_kicks(s, p, 180, 196, key="kick_max", gain=1.0, ghosts=True, rolls=True)
-    lay_hats(s, p, 180, 196, density=16, gain=0.56, tips=True)
-    lay_perc(s, p, 180, 196, gain=1.0, claps=True, rides=True)
-    lay_metal(s, p, 180, 196, gain=0.6)
-    lay_acid(s, p, 180, 196, ACID_C, gain=0.58, cutoff=760, env_mod=5000, res=0.91, drive=11)
-    lay_hoover(s, p, 180, 196, gain=0.36, riff=HOOVER_RIFF2)
-    lay_lead_screech(s, p, 184, 196, gain=0.36)
-    for b in range(180, 196, 8):
+    # -------------------------------------------------------- 200-223 DROP 3
+    log("DROP 3: the theme as a weapon")
+    enter(s, p, 200, power=1.2, horn=True, siren=True)
+    lay_kicks(s, p, 200, 224, key="kick_max", gain=1.0, ghosts=True, rolls=True)
+    lay_hats(s, p, 200, 224, density=16, gain=0.56, tips=True)
+    lay_perc(s, p, 200, 224, gain=1.0, claps=True, rides=True)
+    lay_metal(s, p, 200, 224, gain=0.6)
+    lay_acid(s, p, 200, 224, ACID_C, gain=0.58, cutoff=760, env_mod=5000, res=0.91, drive=11)
+    lay_hoover(s, p, 200, 216, gain=0.34, riff=HOOVER_RIFF2)
+    # the lament, played by the machine
+    s.place("solo", p["violin_dead"], 204, 0, gain=0.42)
+    s.place("strings", p["strings_dead"], 204, 0, gain=0.26)
+    s.place("solo", p["violin_dead"], 216, 0, gain=0.38)
+    lay_lead_screech(s, p, 208, 216, gain=0.34)
+    for b in range(200, 224, 8):
         s.place("lead", p["scr_up"], b + 7, 8, gain=0.34, pan_=RNG.uniform(-0.3, 0.3))
         fill(s, p, b + 7, "metal")
-    s.place("speech", p["sins_choir"], 188, 0, gain=0.5)
-    s.place("voice", p["vstab"], 183, 12, gain=0.34)
-    s.place("voice", p["vstab2"], 191, 6, gain=0.3)
-    s.place("scream", far(p["help_panic"], 8000), 194, 10, gain=0.5, pan_=-0.25)
+    s.place("speech", p["sins_choir"], 212, 0, gain=0.5)
+    s.place("fx", p["siren"], 215, 0, gain=0.26)
+    s.place("lead", p["horn_hi"], 216, 0, gain=0.36)
+    s.place("scream", far(p["help_panic"], 8000), 222, 10, gain=0.5, pan_=-0.25)
+    exit_(s, p, 223, power=1.0)
 
-    # --------------------------------------------------------- 196-207 outro
+    # --------------------------------------------------------- 224-233 outro
     log("outro")
-    lay_kicks(s, p, 196, 204, key="kick", gain=0.95, ghosts=True, rolls=False)
-    lay_hats(s, p, 196, 202, density=16, gain=0.42)
-    lay_perc(s, p, 196, 202, gain=0.65, claps=True)
-    lay_metal(s, p, 196, 204, gain=0.45)
-    lay_acid(s, p, 196, 202, ACID_A, gain=0.36, cutoff=420, env_mod=2600, res=0.82, drive=5)
-    s.place("metal", p["machine"], 200, 0, gain=0.7)
-    s.place("speech", p["say_whisper"], 202, 0, gain=0.46, pan_=-0.3)
-    s.place("speech", p["forgive_close"], 204, 4, gain=0.6)
-    s.place("fx", p["impact"], 204, 0, gain=0.5)
-    s.place("breath", p["breath_out"], 205, 8, gain=0.44, pan_=0.3)
-    s.place("scream", far(p["help_far"], 1100), 205, 2, gain=0.36, pan_=-0.35)
-    s.place("metal", p["clang_hi"], 206, 0, gain=0.3, pan_=0.2)
-    s.place("fx", p["rev_swell"], 206, 0, gain=0.2)
+    lay_kicks(s, p, 224, 230, key="kick", gain=0.95, ghosts=True, rolls=False)
+    lay_hats(s, p, 224, 229, density=16, gain=0.42)
+    lay_perc(s, p, 224, 229, gain=0.65, claps=True)
+    lay_metal(s, p, 224, 231, gain=0.45)
+    lay_acid(s, p, 224, 229, ACID_A, gain=0.36, cutoff=420, env_mod=2600, res=0.82, drive=5)
+    s.place("metal", p["machine"], 228, 0, gain=0.7)
+    s.place("speech", p["say_whisper"], 229, 0, gain=0.46, pan_=-0.3)
+    s.place("solo", p["violin_a"], 230, 0, gain=0.95, pan_=-0.05)
+    s.place("strings", p["strings_a"], 230, 0, gain=0.95)
+    s.place("fx", p["impact"], 230, 0, gain=0.45)
+    s.place("speech", p["forgive_close"], 232, 4, gain=0.55)
+    s.place("breath", p["breath_out"], 232, 8, gain=0.42, pan_=0.3)
 
     return s, p
 
@@ -698,16 +794,28 @@ def process_buses(s, p, verbose=True):
     s.buses["kick"] = s.buses["kick"] * (0.55 + 0.45 * low_w) + \
         biquad(s.buses["kick"], "hp", 110, 0.7) * (1.0 - low_w) * 0.45
 
-    log("distant kick + intro filter")
+    log("distant kick")
     s.buses["kickfar"] = biquad(s.buses["kickfar"], "lp", 420, 0.9)
     s.buses["kickfar"] = send_reverb(s.buses["kickfar"], 0.55, rt60=3.0, damp=0.8,
                                      hp=90, seed=21)
-    open_env = np.ones(n)
-    i1 = s.i(16)
-    open_env[:i1] = np.interp(np.arange(i1), [0, s.i(8), i1], [420.0, 1100.0, 18000.0])
-    open_env[i1:] = 18000.0
-    for nm in ("kickfar", "drums", "air"):
-        s.buses[nm] = sweep(s.buses[nm], "lp", open_env, 0.8, block=512)
+
+    log("strings: a hall, then the machine room")
+    # The section sits back in a long hall; the solo line stays in front of it,
+    # which is the whole difference between accompaniment and melody.
+    s.buses["strings"] = send_reverb(s.buses["strings"], 0.85, rt60=4.6, damp=0.72,
+                                     hp=150, predelay=0.032, seed=141)
+    s.buses["strings"] = widen(s.buses["strings"], 0.8, 21.0)
+    s.buses["strings"] = biquad(s.buses["strings"], "hp", 90, 0.7)
+    s.buses["strings"] = s.buses["strings"] - 0.18 * biquad(s.buses["strings"],
+                                                            "bp", 330, 0.8)
+
+    s.buses["solo"] = send_delay(s.buses["solo"], 0.16, s.step * 6, feedback=0.30,
+                                 damp=4000)
+    s.buses["solo"] = send_reverb(s.buses["solo"], 0.52, rt60=3.4, damp=0.65,
+                                  hp=200, predelay=0.048, seed=151, width=0.8)
+    s.buses["solo"] = widen(s.buses["solo"], 0.35, 12.0)
+    s.buses["solo"] = biquad(s.buses["solo"], "hp", 170, 0.7)
+    s.buses["solo"] = s.buses["solo"] + 0.16 * biquad(s.buses["solo"], "bp", 2600, 0.8)
 
     log("drums")
     s.buses["drums"] = drive_os(s.buses["drums"], 2.0, os=2)
@@ -741,7 +849,7 @@ def process_buses(s, p, verbose=True):
     s.buses["lead"] = widen(s.buses["lead"], 0.55, 13.0)
     s.buses["lead"] = biquad(s.buses["lead"], "hp", 170, 0.7)
 
-    log("voices")
+    log("voices, screams, speech, breath")
     s.buses["voice"] = send_delay(s.buses["voice"], 0.30, s.step * 6, feedback=0.40, damp=3200)
     s.buses["voice"] = send_reverb(s.buses["voice"], 0.85, rt60=3.6, damp=0.62, hp=180,
                                    predelay=0.034, seed=61)
@@ -749,7 +857,6 @@ def process_buses(s, p, verbose=True):
     s.buses["voice"] = biquad(s.buses["voice"], "hp", 130, 0.7)
     s.buses["voice"] = drive_os(s.buses["voice"], 1.5, os=2)
 
-    log("screams")
     s.buses["scream"] = drive_os(s.buses["scream"], 1.6, os=2)
     s.buses["scream"] = send_delay(s.buses["scream"], 0.34, s.step * 6, feedback=0.46,
                                    damp=2800)
@@ -758,9 +865,7 @@ def process_buses(s, p, verbose=True):
     s.buses["scream"] = widen(s.buses["scream"], 0.45, 15.0)
     s.buses["scream"] = biquad(s.buses["scream"], "hp", 160, 0.7)
 
-    log("speech: a voice in a large stone room")
-    # Long predelay keeps the words in front of the reverb instead of inside
-    # it - the difference between a cathedral and a bathroom.
+    # Long predelay keeps the words in front of the reverb instead of inside it.
     s.buses["speech"] = send_delay(s.buses["speech"], 0.20, s.step * 6, feedback=0.34,
                                    damp=3600)
     s.buses["speech"] = send_reverb(s.buses["speech"], 0.62, rt60=5.0, damp=0.68, hp=190,
@@ -769,7 +874,6 @@ def process_buses(s, p, verbose=True):
     s.buses["speech"] = biquad(s.buses["speech"], "hp", 105, 0.7)
     s.buses["speech"] = s.buses["speech"] + 0.18 * biquad(s.buses["speech"], "bp", 2400, 0.7)
 
-    log("breath: close and wide")
     s.buses["breath"] = send_reverb(s.buses["breath"], 0.22, rt60=1.8, damp=0.72, hp=300,
                                     predelay=0.018, seed=131)
     s.buses["breath"] = widen(s.buses["breath"], 0.85, 23.0)
@@ -785,19 +889,26 @@ def process_buses(s, p, verbose=True):
 
     s.buses["air"] = send_reverb(s.buses["air"], 0.6, rt60=3.4, damp=0.8, hp=80, seed=91)
 
+    log("intro filter")
+    i1 = s.i(32)
+    open_env = np.full(n, 18000.0)          # wide open after the intro
+    open_env[:i1] = np.interp(np.arange(i1), [0, s.i(24), s.i(30), i1],
+                              [700.0, 1400.0, 4000.0, 18000.0])
+    for nm in ("kickfar", "drums", "air"):
+        s.buses[nm] = sweep(s.buses[nm], "lp", open_env, 0.8, block=512)
+
     log("sidechain")
     deep = s.duck_envelope(depth=0.88, attack=0.003, hold=0.03, release=0.155)
     mid = s.duck_envelope(depth=0.62, attack=0.004, hold=0.02, release=0.13)
     light = s.duck_envelope(depth=0.34, attack=0.005, hold=0.012, release=0.10)
     s.apply_duck(["rumble", "sub"], deep)
-    s.apply_duck(["bass", "pad", "metal"], mid)
-    s.apply_duck(["lead", "voice", "scream", "speech", "breath", "fx", "drums", "air"],
-                 light)
+    s.apply_duck(["bass", "pad", "metal", "strings"], mid)
+    s.apply_duck(["lead", "voice", "scream", "speech", "breath", "solo", "fx",
+                  "drums", "air"], light)
     return s.buses
 
 
 def finalize(buses, verbose=True):
-    """Balance, sum and master. Cheap enough to re-run while tuning."""
     if verbose:
         print("  balancing buses", flush=True)
     n = next(iter(buses.values())).shape[1]

@@ -232,3 +232,48 @@ def noise_fall(dur=2.4, f_from=9000.0, f_to=220.0, seed=0, q=1.8):
 
 def vinyl_brake(x, start=0.35, end_ratio=0.05):
     return tape_stop(x, start=start, end_ratio=end_ratio, curve=1.8)
+
+
+def siren(dur=4.0, lo=380.0, hi=1500.0, rate=0.45, drive=6.0, seed=0):
+    """Rave siren: the oldest trick in the warehouse."""
+    n = n_samples(dur)
+    t = np.arange(n) / SR
+    k = 0.5 - 0.5 * np.cos(TWO_PI * rate * t)
+    f = lo * (hi / lo) ** k
+    x = saw(f, n) + 0.7 * square(f * 0.5, n, 0.4)
+    x = sweep(x, "bp", np.clip(f * 2.4, 200, 14000), 6.0)
+    x = drive_os(x * 2.5, drive)
+    x *= env_curve([(0, 0), (0.06, 1), (0.85, 1), (1, 0)], n)
+    return normalize(x, 0.85)
+
+
+def war_horn(midi=42, dur=3.0, detune=18.0, drive=7.0, seed=0, growl=0.5):
+    """A slow, enormous, detuned blare - the thing that announces the drop."""
+    n = n_samples(dur)
+    t = np.arange(n) / SR
+    f = note_hz_local(midi) * (1.0 + 0.012 * np.exp(-t / 0.35))
+    x = supersaw(f, n, voices=9, detune_cents=detune)
+    x += 0.7 * square(f * 0.5, n, 0.42)
+    x += 0.4 * saw(f * 2.0, n)
+    x *= 1.0 + growl * 0.25 * np.sin(TWO_PI * 33.0 * t)
+    x = ladder(x, np.clip(f * (4 + 14 * np.clip(t / (dur * 0.5), 0, 1)), 200, 9000), 0.62)
+    x = drive_os(x * 2.2, drive)
+    x += 0.35 * biquad(x, "bp", 1800, 1.0)
+    x *= env_curve([(0, 0), (0.10, 1.0), (0.75, 0.85), (1, 0)], n)
+    return normalize(biquad(x, "hp", 55, 0.7), 0.9)
+
+
+def note_hz_local(midi):
+    return 440.0 * 2.0 ** ((midi - 69) / 12.0)
+
+
+def whoosh(dur=2.2, up=True, seed=0, f_lo=250.0, f_hi=9000.0):
+    """Sweep for covering a seam. Cheap, and it works every time."""
+    n = n_samples(dur)
+    p = np.arange(n) / n
+    k = p if up else (1 - p)
+    f = f_lo * (f_hi / f_lo) ** (k ** 1.3)
+    x = sweep(noise(n, seed=seed + 201), "bp", f, 1.6, stages=2)
+    x += 0.5 * sweep(noise(n, seed=seed + 202), "hp", f * 0.7, 0.7)
+    env = (p ** 2.0) if up else np.exp(-p * 2.6)
+    return normalize(x * env, 0.8)

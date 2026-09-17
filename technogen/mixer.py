@@ -148,11 +148,15 @@ def balance(buses, targets, reference="kick", verbose=True):
     return gains
 
 
-# Octave-band target curve for a hard techno master, dB relative to 40-80 Hz.
+# Octave-band balance of the master, dB relative to 40-80 Hz. Measured off a
+# mix that was checked and signed off, rather than guessed: tilt_match runs at
+# the end of the chain, so these numbers describe the output itself.
 TILT_TARGET = [
-    (20, 40, -15.0), (40, 80, 0.0), (80, 160, -4.5), (160, 320, -9.0),
-    (320, 640, -10.5), (640, 1280, -12.5), (1280, 2560, -15.0),
-    (2560, 5120, -17.0), (5120, 10240, -21.0), (10240, 20000, -26.0),
+    (20, 40, -23.1), (40, 80, 0.0),
+    (80, 160, -7.2), (160, 320, -12.5),
+    (320, 640, -18.3), (640, 1280, -19.5),
+    (1280, 2560, -21.5), (2560, 5120, -22.9),
+    (5120, 10240, -26.8), (10240, 20000, -28.3),
 ]
 
 
@@ -181,26 +185,39 @@ def measure_bands(x, sr=SR, loud_only=True):
     return [P[(f >= a) & (f < b)].sum() + 1e-18 for a, b, _ in TILT_TARGET]
 
 
-def tilt_match(x, max_db=6.0, verbose=True):
-    """Bounded corrective EQ that pulls the mix toward TILT_TARGET.
+def tilt_match(x, max_db=13.0, passes=5, verbose=True):
+    """Bounded corrective EQ that pulls the mix onto TILT_TARGET.
 
-    Synthesised drums are far more consistent than sampled ones, so a fixed
-    EQ curve never fits; measuring and correcting does.
+    The corrections are applied as overlapping peaking filters, so a cut in
+    one band also lowers its neighbours and the bands compound. Measuring
+    once and applying once overshoots badly whenever the corrections are
+    large, so this measures the residual and re-corrects until it lands.
     """
-    e = measure_bands(x)
     ref_idx = 1                                   # the 40-80 Hz band
-    have = [10 * np.log10(v / e[ref_idx]) for v in e]
     y = x
-    if verbose:
-        print("  band          have  target   corr")
-    for i, (a, b, target) in enumerate(TILT_TARGET):
-        corr = float(np.clip(target - have[i], -max_db, max_db))
-        if i == ref_idx:
-            corr = 0.0
-        fc = np.sqrt(a * b)
-        y = peaking(y, fc, 0.9, corr)
-        if verbose:
-            print(f"    {a:5d}-{b:<6d} {have[i]:+6.1f}  {target:+6.1f}  {corr:+6.1f}")
+    applied = np.zeros(len(TILT_TARGET))
+    for p in range(passes):
+        e = measure_bands(y)
+        have = np.array([10 * np.log10(v / e[ref_idx]) for v in e])
+        want = np.array([t for _, _, t in TILT_TARGET])
+        resid = want - have
+        resid[ref_idx] = 0.0
+        # keep the running total inside the budget rather than each pass
+        step = np.clip(applied + resid, -max_db, max_db) - applied
+        if p == 0:
+            step *= 0.8                           # damp the first, largest move
+        for i, (a, b, _) in enumerate(TILT_TARGET):
+            if abs(step[i]) > 0.05:
+                y = peaking(y, float(np.sqrt(a * b)), 0.9, float(step[i]))
+        applied += step
+        if verbose and p == passes - 1:
+            final = measure_bands(y)
+            got = np.array([10 * np.log10(v / final[ref_idx]) for v in final])
+            print("  band           target     got    err    applied")
+            for i, (a, b, t) in enumerate(TILT_TARGET):
+                print(f"    {a:5d}-{b:<6d} {t:+7.1f} {got[i]:+7.1f} "
+                      f"{got[i] - t:+6.1f}  {applied[i]:+7.1f}")
+            print(f"  tilt residual: {np.mean(np.abs(got - want)):.2f} dB mean error")
     return y
 
 
@@ -219,7 +236,6 @@ def set_loudness(x, target_rms_db=-8.5, win=0.4, top_frac=0.3):
 def master(mix, headroom_db=-1.0, target_rms_db=-7.8, glue=True, verbose=True):
     x = mix
     x = biquad(x, "hp", 27, 0.7)
-    x = tilt_match(x, max_db=9.0, verbose=verbose)
     if glue:
         x = compress(x, thresh_db=-18.0, ratio=2.0, attack=0.015, release=0.18, makeup_db=1.5)
     x = tape(x, drive=1.25)
@@ -227,6 +243,9 @@ def master(mix, headroom_db=-1.0, target_rms_db=-7.8, glue=True, verbose=True):
     x = peaking(x, 5800, 0.9, 2.5)                   # screech bite
     x = peaking(x, 95, 0.8, 1.5)                     # fill the 63-125 scoop
     x = x + 0.05 * biquad(x, "hp", 8500, 0.7)        # air
+    # Corrective tilt goes last, after every stage that colours the mix,
+    # so the target curve describes the output and not an intermediate.
+    x = tilt_match(x, verbose=verbose)
     x = set_loudness(x, target_rms_db)
     x = soft_clip(x * 1.02, 0.90)
     x = limiter(x, ceiling=db(headroom_db))
