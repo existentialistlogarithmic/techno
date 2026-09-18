@@ -1,0 +1,409 @@
+CONCRETE CATHEDRAL - what to place, and when
+====================================================
+
+150 BPM, F# minor.  Bars are Ableton bar numbers (bar 1 = the start),
+so a section listed as bars 16-31 starts on Ableton's bar 17.
+Steps are sixteenths within the bar: 1 5 9 13 are the four beats.
+
+
+----------------------------------------------------
+LAMENT   bars 0-14   (Ableton bar 1, 0:00.0)
+----------------------------------------------------
+  05_strings/cello_lament_bass.wav               bars 0-7 (2x)
+  05_strings/string_section_chords_1.wav         bars 0-7 (2x)
+  02_industrial/machine_loop_low_150bpm.wav      bar 9, step 1
+  02_industrial/steam_long.wav                   bar 14, step 9
+  03_textures/drone_low.wav                      bar 5, step 1
+  03_textures/noise_bed_bright.wav               bar 0, step 1
+  05_strings/violin_cry_phrase_1.wav             bar 0, step 1
+  05_strings/violin_cry_phrase_2_climax.wav      bar 7, step 1
+  05_strings/violin_cry_phrase_2_octave_down.wav bar 7, step 1
+  06_fx/noise_riser_8bar.wav                     bar 8, step 1
+  07_speech/confession_close.wav                 bar 3, step 5
+  07_speech/confession_whispered.wav             bar 3, step 5
+
+----------------------------------------------------
+BOOM BOOM   bars 15-15   (Ableton bar 16, 0:24.0)
+----------------------------------------------------
+  02_industrial/BOOM_1.wav                       bar 15, step 1
+  02_industrial/BOOM_2_bigger.wav                bar 15, step 9
+  02_industrial/clang_big.wav                    bar 15, step 1
+  02_industrial/hammer_low.wav                   bar 15, step 9
+
+----------------------------------------------------
+THE MACHINE   bars 16-31   (Ableton bar 17, 0:25.6)
+----------------------------------------------------
+  01_drums/clap.wav                              every bar, steps 9
+  01_drums/hat_closed.wav                        every bar, steps 1 2 3 4 6 7 8 9 10 11 12 14 15 16
+  01_drums/hat_closed_bright.wav                 every bar, steps 5 13
+  01_drums/hat_open.wav                          every bar, steps 3 7 11 15
+  01_drums/hat_tip.wav                           every bar, steps 2 8 10 16
+  01_drums/kick_hard.wav                         every bar, steps 1 5 9 13
+  01_drums/kick_sub_layer.wav                    every bar, steps 1 5 9 13
+  01_drums/rim.wav                               every bar, steps 4 12 16
+  02_industrial/anvil_high.wav                   every bar, steps 6 8 13
+  02_industrial/anvil_low.wav                    every bar, steps 13 15
+  02_industrial/metal_can_high.wav               every bar, steps 3 4 7 10 12 14 15
+  02_industrial/metal_plate_low.wav              every bar, steps 16
+  02_industrial/metal_plate_mid.wav              every bar, steps 1 7 11
+  01_drums/kick_short_roll.wav                   bars 19-31 (4x)
+  01_drums/tom_high.wav                          bars 23-31 (2x)
+  01_drums/tom_low.wav                           bars 23-31 (2x)
+  02_industrial/chain_short.wav                  bars 19-31 (4x)
+  02_industrial/conveyor_loop_150bpm.wav         bars 16-28 (4x)
+  02_industrial/metal_scrape.wav                 bars 23-31 (2x)
+  03_textures/metal_debris_dense_150bpm.wav      bars 16-28 (4x)
+  04_synths/screech_up.wav                       bars 23-31 (2x)
+  02_industrial/clang_big.wav                    bar 16, step 1
+  02_industrial/hammer.wav                       bar 16, step 1
+  02_industrial/hammer_low.wav                   bar 31, step 13
+  02_industrial/machine_loop_150bpm.wav          bar 16, step 1
+  03_textures/drone_low.wav                      bar 16, step 1
+  03_textures/noise_bed_dark.wav                 bar 16, step 1
+  04_synths/war_horn_F#1.wav                     bar 16, step 1
+  05_strings/strings_corrupted_100pct.wav        bar 28, step 1
+  05_strings/strings_corrupted_25pct.wav         bar 16, step 1
+  05_strings/strings_corrupted_50pct.wav         bar 20, step 1
+  05_strings/strings_corrupted_75pct.wav         bar 24, step 1
+  06_fx/impact.wav                               bar 16, step 1
+
+----------------------------------------------------
+GROOVE   bars 32-47   (Ableton bar 33, 0:51.2)
+----------------------------------------------------
+  01_drums/clap.wav                              every bar, steps 9
+  01_drums/hat_closed.wav                        every bar, steps 1 2 3 4 6 7 8 9 10 11 12 14 15 16
+  01_drums/hat_closed_bright.wav                 every bar, steps 5 13
+  01_drums/hat_open.wav                          every bar, steps 3 7 11 15
+  01_drums/hat_tip.wav                           every bar, steps 2 8 10 16
+  01_drums/kick_main.wav                         every bar, steps 1 5 9 13
+  01_drums/kick_sub_layer.wav                    every bar, steps 1 5 9 13
+  01_drums/rim.wav                               every bar, steps 4 12 16
+  02_industrial/anvil_high.wav                   every bar, steps 6 8 13
+  02_industrial/anvil_low.wav                    every bar, steps 13 15
+  02_industrial/metal_can_high.wav               every bar, steps 3 4 7 10 12 14 15
+  02_industrial/metal_plate_low.wav              every bar, steps 16
+  02_industrial/metal_plate_mid.wav              every bar, steps 1 7 11
+  01_drums/kick_short_roll.wav                   bars 35-47 (4x)
+  01_drums/tom_high.wav                          bars 39-47 (2x)
+  01_drums/tom_low.wav                           bars 39-47 (2x)
+  02_industrial/chain_short.wav                  bars 35-47 (4x)
+  02_industrial/conveyor_loop_150bpm.wav         bars 32-44 (4x)
+  02_industrial/metal_scrape.wav                 bars 39-47 (2x)
+  03_textures/metal_debris_sparse_150bpm.wav     bars 32-44 (4x)
+  02_industrial/machine_loop_150bpm.wav          bar 40, step 1
+  03_textures/drone_mid.wav                      bar 40, step 1
+  03_textures/noise_bed_bright.wav               bar 32, step 1
+
+----------------------------------------------------
+BUILD 1   bars 48-63   (Ableton bar 49, 1:16.8)
+----------------------------------------------------
+  01_drums/clap.wav                              every bar, steps 9
+  01_drums/hat_closed.wav                        every bar, steps 1 2 3 4 6 7 8 9 10 11 12 14 15 16
+  01_drums/hat_closed_bright.wav                 every bar, steps 5 13
+  01_drums/hat_open.wav                          every bar, steps 3 7 11 15
+  01_drums/hat_tip.wav                           every bar, steps 2 8 10 16
+  01_drums/kick_main.wav                         every bar, steps 1 5 9 13
+  01_drums/kick_sub_layer.wav                    every bar, steps 1 5 9 13
+  01_drums/rim.wav                               every bar, steps 4 12 16
+  02_industrial/anvil_high.wav                   every bar, steps 6 8
+  02_industrial/anvil_low.wav                    every bar, steps 13 15
+  02_industrial/metal_can_high.wav               every bar, steps 3 4 7 10 12 14
+  02_industrial/metal_plate_low.wav              every bar, steps 16
+  02_industrial/metal_plate_mid.wav              every bar, steps 1 7 11
+  01_drums/kick_short_roll.wav                   bars 51-63 (4x)
+  01_drums/tom_high.wav                          bars 55-63 (2x)
+  01_drums/tom_low.wav                           bars 55-63 (2x)
+  02_industrial/chain_short.wav                  bars 51-63 (4x)
+  02_industrial/metal_scrape.wav                 bars 55-63 (2x)
+  03_textures/metal_debris_dense_150bpm.wav      bars 48-60 (4x)
+  03_textures/drone_mid.wav                      bar 56, step 1
+  03_textures/noise_bed_dark.wav                 bar 48, step 1
+
+----------------------------------------------------
+TENSION   bars 64-71   (Ableton bar 65, 1:42.4)
+----------------------------------------------------
+  01_drums/hat_closed.wav                        every bar, steps 1 2 3 4 6 7 8 9 10 11 12 14 15 16
+  01_drums/hat_closed_bright.wav                 every bar, steps 5 13
+  01_drums/hat_open.wav                          every bar, steps 3 7 11 15
+  01_drums/kick_main.wav                         every bar, steps 1 5 9 13
+  01_drums/kick_sub_layer.wav                    every bar, steps 1 5 9 13
+  01_drums/rim.wav                               every bar, steps 4 12 16
+  01_drums/clap.wav                              bars 65-67 (2x)
+  01_drums/snare.wav                             bars 68-69 (2x)
+  01_drums/snare_tight.wav                       bars 69-70 (2x)
+  01_drums/kick_short_roll.wav                   bar 67, step 15
+  02_industrial/feedback_tone.wav                bar 70, step 9
+  02_industrial/steam_long.wav                   bar 70, step 1
+  03_textures/noise_bed_bright.wav               bar 64, step 1
+  06_fx/noise_riser_4bar.wav                     bar 68, step 1
+  06_fx/noise_riser_8bar.wav                     bar 64, step 1
+  06_fx/sub_drop.wav                             bar 71, step 13
+
+----------------------------------------------------
+DROP 1   bars 72-103   (Ableton bar 73, 1:55.2)
+----------------------------------------------------
+  01_drums/clap.wav                              every bar, steps 9
+  01_drums/hat_closed.wav                        every bar, steps 1 2 3 4 6 7 8 9 10 11 12 14 15 16
+  01_drums/hat_closed_bright.wav                 every bar, steps 5 13
+  01_drums/hat_open.wav                          every bar, steps 3 7 11 15
+  01_drums/hat_tip.wav                           every bar, steps 2 8 10 16
+  01_drums/kick_main.wav                         every bar, steps 1 5 9 13
+  01_drums/kick_sub_layer.wav                    every bar, steps 1 5 9 13
+  01_drums/rim.wav                               every bar, steps 4 12 16
+  02_industrial/anvil_high.wav                   every bar, steps 6 8 13
+  02_industrial/anvil_low.wav                    every bar, steps 13 15
+  02_industrial/metal_can_high.wav               every bar, steps 3 4 7 10 12 14 15
+  02_industrial/metal_plate_low.wav              every bar, steps 16
+  02_industrial/metal_plate_mid.wav              every bar, steps 1 7 11
+  01_drums/kick_short_roll.wav                   bars 75-103 (8x)
+  01_drums/tom_high.wav                          bars 79-103 (4x)
+  01_drums/tom_low.wav                           bars 79-103 (4x)
+  02_industrial/chain_short.wav                  bars 75-103 (8x)
+  02_industrial/hammer_low.wav                   bars 87-103 (2x)
+  02_industrial/metal_scrape.wav                 bars 79-103 (4x)
+  03_textures/metal_debris_dense_150bpm.wav      bars 72-96 (4x)
+  03_textures/metal_debris_sparse_150bpm.wav     bars 76-100 (4x)
+  04_synths/hoover_long_A2.wav                   bars 74-98 (4x)
+  04_synths/hoover_long_A3.wav                   bars 76-100 (4x)
+  04_synths/hoover_long_B2.wav                   bars 74-98 (4x)
+  04_synths/hoover_long_C#3.wav                  bars 72-102 (8x)
+  04_synths/hoover_long_E3.wav                   bars 78-102 (4x)
+  04_synths/hoover_long_F#3.wav                  bars 72-100 (8x)
+  04_synths/hoover_stab_C#3.wav                  bars 75-103 (8x)
+  04_synths/hoover_stab_F#3.wav                  bars 73-101 (8x)
+  04_synths/screech_up.wav                       bars 79-103 (4x)
+  02_industrial/clang_big.wav                    bar 72, step 1
+  02_industrial/hammer.wav                       bar 72, step 1
+  03_textures/drone_low.wav                      bar 88, step 1
+  03_textures/noise_bed_bright.wav               bar 96, step 1
+  03_textures/noise_bed_dark.wav                 bar 80, step 1
+  04_synths/war_horn_F#1.wav                     bar 72, step 1
+  06_fx/impact.wav                               bar 72, step 1
+  06_fx/sub_drop.wav                             bar 103, step 13
+  07_speech/for_all_my_sins_choir.wav            bar 88, step 1
+
+----------------------------------------------------
+INTERLUDE   bars 104-111   (Ableton bar 105, 2:46.4)
+----------------------------------------------------
+  01_drums/kick_soft_distant.wav                 every bar, steps 1 9
+  02_industrial/metal_can_high.wav               every bar, steps 7
+  03_textures/metal_debris_sparse_150bpm.wav     every bar, steps 1
+  02_industrial/steam_long.wav                   bars 105-111 (2x)
+  02_industrial/feedback_tone.wav                bar 109, step 1
+  02_industrial/machine_loop_150bpm.wav          bar 104, step 1
+  03_textures/drone_low.wav                      bar 104, step 1
+  03_textures/metal_debris_dense_150bpm.wav      bar 110, step 1
+  06_fx/noise_riser_4bar.wav                     bar 108, step 1
+  06_fx/sub_drop.wav                             bar 104, step 1
+  07_speech/forgive_me_close.wav                 bar 110, step 1
+
+----------------------------------------------------
+BUILD 2   bars 112-127   (Ableton bar 113, 2:59.2)
+----------------------------------------------------
+  01_drums/clap.wav                              every bar, steps 9
+  01_drums/hat_closed.wav                        every bar, steps 1 2 3 4 6 7 8 9 10 11 12 14 15 16
+  01_drums/hat_closed_bright.wav                 every bar, steps 5 13
+  01_drums/hat_open.wav                          every bar, steps 3 7 11 15
+  01_drums/hat_tip.wav                           every bar, steps 2 8 10 16
+  01_drums/kick_main.wav                         every bar, steps 1 5 9 13
+  01_drums/kick_sub_layer.wav                    every bar, steps 1 5 9 13
+  01_drums/rim.wav                               every bar, steps 4 12 16
+  02_industrial/anvil_high.wav                   every bar, steps 6 8
+  02_industrial/anvil_low.wav                    every bar, steps 13 15
+  02_industrial/metal_can_high.wav               every bar, steps 3 4 7 10 12 14
+  02_industrial/metal_plate_low.wav              every bar, steps 16
+  02_industrial/metal_plate_mid.wav              every bar, steps 1 7 11
+  01_drums/kick_short_roll.wav                   bars 115-123 (3x)
+  01_drums/snare.wav                             bars 124-125 (2x)
+  01_drums/snare_tight.wav                       bars 125-126 (2x)
+  01_drums/tom_high.wav                          bars 119-127 (2x)
+  01_drums/tom_low.wav                           bars 119-127 (2x)
+  02_industrial/chain_short.wav                  bars 115-127 (4x)
+  02_industrial/metal_scrape.wav                 bars 119-127 (2x)
+  03_textures/metal_debris_dense_150bpm.wav      bars 112-124 (4x)
+  02_industrial/steam_long.wav                   bar 126, step 1
+  03_textures/noise_bed_dark.wav                 bar 112, step 1
+  04_synths/hoover_long_A2.wav                   bar 122, step 11
+  04_synths/hoover_long_B2.wav                   bar 122, step 1
+  04_synths/hoover_long_C#3.wav                  bar 120, step 13
+  04_synths/hoover_long_F#3.wav                  bar 120, step 1
+  06_fx/noise_riser_4bar.wav                     bar 124, step 1
+  06_fx/noise_riser_8bar.wav                     bar 120, step 1
+  06_fx/sub_drop.wav                             bar 127, step 13
+
+----------------------------------------------------
+DROP 2   bars 128-159   (Ableton bar 129, 3:24.8)
+----------------------------------------------------
+  01_drums/clap.wav                              every bar, steps 9
+  01_drums/hat_closed.wav                        every bar, steps 1 2 3 4 6 7 8 9 10 11 12 14 15 16
+  01_drums/hat_closed_bright.wav                 every bar, steps 5 13
+  01_drums/hat_open.wav                          every bar, steps 3 7 11 15
+  01_drums/hat_tip.wav                           every bar, steps 2 8 10 16
+  01_drums/kick_hard.wav                         every bar, steps 1 5 9 13
+  01_drums/kick_sub_layer.wav                    every bar, steps 1 5 9 13
+  01_drums/ride.wav                              every bar, steps 1 3 5 7 9 11 13 15
+  01_drums/rim.wav                               every bar, steps 4 12 16
+  02_industrial/anvil_high.wav                   every bar, steps 6 8 13
+  02_industrial/anvil_low.wav                    every bar, steps 13 15
+  02_industrial/metal_can_high.wav               every bar, steps 3 4 7 10 12 14 15
+  02_industrial/metal_plate_low.wav              every bar, steps 16
+  02_industrial/metal_plate_mid.wav              every bar, steps 1 7 11
+  01_drums/kick_short_roll.wav                   bars 131-159 (8x)
+  01_drums/tom_high.wav                          bars 135-159 (4x)
+  01_drums/tom_low.wav                           bars 135-159 (4x)
+  02_industrial/chain_short.wav                  bars 131-159 (8x)
+  02_industrial/hammer_low.wav                   bars 143-159 (2x)
+  02_industrial/metal_scrape.wav                 bars 135-159 (4x)
+  03_textures/metal_debris_dense_150bpm.wav      bars 128-152 (4x)
+  03_textures/metal_debris_sparse_150bpm.wav     bars 132-156 (4x)
+  04_synths/hoover_long_A3.wav                   bars 128-155 (8x)
+  04_synths/hoover_long_B3.wav                   bars 132-156 (4x)
+  04_synths/hoover_long_C#3.wav                  bars 135-159 (4x)
+  04_synths/hoover_long_C#4.wav                  bars 130-154 (4x)
+  04_synths/hoover_long_E3.wav                   bars 134-158 (4x)
+  04_synths/hoover_long_F#3.wav                  bars 129-157 (8x)
+  04_synths/hoover_stab_C#3.wav                  bars 131-159 (8x)
+  04_synths/hoover_stab_F#3.wav                  bars 129-157 (8x)
+  04_synths/screech_stab_down.wav                bars 136-150 (8x)
+  04_synths/screech_stab_up.wav                  bars 136-150 (8x)
+  04_synths/screech_up.wav                       bars 135-159 (4x)
+  02_industrial/clang_big.wav                    bar 128, step 1
+  02_industrial/hammer.wav                       bar 128, step 1
+  03_textures/drone_mid.wav                      bar 144, step 1
+  03_textures/noise_bed_bright.wav               bar 128, step 1
+  03_textures/noise_bed_dark.wav                 bar 144, step 1
+  04_synths/war_horn_C#2.wav                     bar 152, step 1
+  04_synths/war_horn_F#1.wav                     bar 128, step 1
+  06_fx/impact.wav                               bar 128, step 1
+  06_fx/sub_drop.wav                             bar 159, step 13
+  07_speech/for_all_my_sins_choir.wav            bar 144, step 1
+
+----------------------------------------------------
+BREAKDOWN   bars 160-175   (Ableton bar 161, 4:16.0)
+----------------------------------------------------
+  01_drums/kick_soft_distant.wav                 bars 170-175 (6x)
+  03_textures/metal_debris_sparse_150bpm.wav     bars 170-175 (6x)
+  05_strings/string_section_chords_2.wav         bars 160-168 (2x)
+  02_industrial/machine_loop_low_150bpm.wav      bar 160, step 1
+  02_industrial/steam_long.wav                   bar 175, step 9
+  03_textures/drone_low.wav                      bar 160, step 1
+  03_textures/metal_debris_dense_150bpm.wav      bar 174, step 1
+  03_textures/noise_bed_bright.wav               bar 160, step 1
+  04_synths/pad_dark.wav                         bar 160, step 1
+  05_strings/cello_lament_bass.wav               bar 160, step 1
+  05_strings/violin_cry_phrase_1_breakdown.wav   bar 162, step 1
+  06_fx/noise_riser_4bar.wav                     bar 172, step 1
+  07_speech/confession_vocoded_choir.wav         bar 168, step 1
+
+----------------------------------------------------
+BUILD 3   bars 176-183   (Ableton bar 177, 4:41.6)
+----------------------------------------------------
+  01_drums/clap.wav                              every bar, steps 9
+  01_drums/hat_closed.wav                        every bar, steps 1 2 3 4 6 7 8 9 10 11 12 14 15 16
+  01_drums/hat_closed_bright.wav                 every bar, steps 5 13
+  01_drums/hat_open.wav                          every bar, steps 3 7 11 15
+  01_drums/hat_tip.wav                           every bar, steps 2 8 10 16
+  01_drums/kick_main.wav                         every bar, steps 1 5 9 13
+  01_drums/kick_sub_layer.wav                    every bar, steps 1 5 9 13
+  01_drums/rim.wav                               every bar, steps 4 12 16
+  02_industrial/anvil_high.wav                   every bar, steps 6 8
+  02_industrial/anvil_low.wav                    every bar, steps 13 15
+  02_industrial/metal_can_high.wav               every bar, steps 3 4 7 10 12 14
+  02_industrial/metal_plate_low.wav              every bar, steps 16
+  02_industrial/metal_plate_mid.wav              every bar, steps 1 7 11
+  01_drums/snare.wav                             bars 180-181 (2x)
+  01_drums/snare_tight.wav                       bars 181-182 (2x)
+  02_industrial/chain_short.wav                  bars 179-183 (2x)
+  01_drums/kick_short_roll.wav                   bar 179, step 15
+  01_drums/tom_high.wav                          bar 183, step 14
+  01_drums/tom_low.wav                           bar 183, step 11
+  02_industrial/feedback_tone_high.wav           bar 182, step 9
+  02_industrial/metal_scrape.wav                 bar 183, step 9
+  02_industrial/steam_long.wav                   bar 182, step 1
+  03_textures/noise_bed_dark.wav                 bar 176, step 1
+  06_fx/noise_riser_4bar.wav                     bar 180, step 1
+  06_fx/sub_drop.wav                             bar 183, step 13
+
+----------------------------------------------------
+DROP 3   bars 184-215   (Ableton bar 185, 4:54.4)
+----------------------------------------------------
+  01_drums/clap.wav                              every bar, steps 9
+  01_drums/hat_closed.wav                        every bar, steps 1 2 3 4 6 7 8 9 10 11 12 14 15 16
+  01_drums/hat_closed_bright.wav                 every bar, steps 5 13
+  01_drums/hat_open.wav                          every bar, steps 3 7 11 15
+  01_drums/hat_tip.wav                           every bar, steps 2 8 10 16
+  01_drums/kick_hardest.wav                      every bar, steps 1 5 9 13
+  01_drums/kick_sub_layer.wav                    every bar, steps 1 5 9 13
+  01_drums/ride.wav                              every bar, steps 1 3 5 7 9 11 13 15
+  01_drums/rim.wav                               every bar, steps 4 12 16
+  02_industrial/anvil_high.wav                   every bar, steps 6 8 13
+  02_industrial/anvil_low.wav                    every bar, steps 13 15
+  02_industrial/metal_can_high.wav               every bar, steps 3 4 7 10 12 14 15
+  02_industrial/metal_plate_low.wav              every bar, steps 16
+  02_industrial/metal_plate_mid.wav              every bar, steps 1 7 11
+  01_drums/kick_short_roll.wav                   bars 187-215 (8x)
+  01_drums/tom_high.wav                          bars 191-215 (4x)
+  01_drums/tom_low.wav                           bars 191-215 (4x)
+  02_industrial/chain_short.wav                  bars 187-215 (8x)
+  02_industrial/hammer_low.wav                   bars 199-215 (2x)
+  02_industrial/metal_scrape.wav                 bars 191-215 (4x)
+  03_textures/metal_debris_dense_150bpm.wav      bars 184-208 (4x)
+  03_textures/metal_debris_sparse_150bpm.wav     bars 188-212 (4x)
+  04_synths/hoover_long_A3.wav                   bars 184-211 (8x)
+  04_synths/hoover_long_B3.wav                   bars 188-212 (4x)
+  04_synths/hoover_long_C#3.wav                  bars 191-215 (4x)
+  04_synths/hoover_long_C#4.wav                  bars 186-210 (4x)
+  04_synths/hoover_long_E3.wav                   bars 190-214 (4x)
+  04_synths/hoover_long_F#3.wav                  bars 185-213 (8x)
+  04_synths/hoover_stab_C#3.wav                  bars 187-215 (8x)
+  04_synths/hoover_stab_F#3.wav                  bars 185-213 (8x)
+  04_synths/screech_stab_down.wav                bars 192-206 (8x)
+  04_synths/screech_stab_up.wav                  bars 192-206 (8x)
+  04_synths/screech_up.wav                       bars 191-215 (4x)
+  05_strings/violin_distorted_lead.wav           bars 188-204 (2x)
+  02_industrial/clang_big.wav                    bar 184, step 1
+  02_industrial/hammer.wav                       bar 184, step 1
+  03_textures/noise_bed_bright.wav               bar 192, step 1
+  03_textures/noise_bed_dark.wav                 bar 208, step 1
+  04_synths/war_horn_C#2.wav                     bar 208, step 1
+  04_synths/war_horn_F#1.wav                     bar 184, step 1
+  05_strings/string_section_distorted.wav        bar 188, step 1
+  06_fx/impact.wav                               bar 184, step 1
+  06_fx/sub_drop.wav                             bar 215, step 13
+  07_speech/for_all_my_sins_choir.wav            bar 200, step 1
+
+----------------------------------------------------
+OUTRO   bars 216-223   (Ableton bar 217, 5:45.6)
+----------------------------------------------------
+  01_drums/hat_closed.wav                        every bar, steps 1 2 3 4 6 7 8 9 10 11 12 14 15 16
+  01_drums/hat_closed_bright.wav                 every bar, steps 5 13
+  01_drums/hat_open.wav                          every bar, steps 3 7 11 15
+  01_drums/kick_main.wav                         every bar, steps 1 5 9 13
+  01_drums/kick_sub_layer.wav                    every bar, steps 1 5 9 13
+  01_drums/rim.wav                               every bar, steps 4 12 16
+  02_industrial/anvil_high.wav                   every bar, steps 6 8
+  02_industrial/anvil_low.wav                    every bar, steps 13 15
+  02_industrial/metal_can_high.wav               every bar, steps 3 4 7 10 12 14
+  02_industrial/metal_plate_mid.wav              every bar, steps 1 7 11
+  01_drums/clap.wav                              bars 217-219 (2x)
+  02_industrial/metal_plate_low.wav              bars 217-221 (3x)
+  01_drums/kick_short_roll.wav                   bar 219, step 15
+  02_industrial/chain_short.wav                  bar 219, step 13
+  02_industrial/machine_loop_150bpm.wav          bar 218, step 1
+  03_textures/drone_low.wav                      bar 216, step 1
+  05_strings/string_section_chords_1.wav         bar 220, step 1
+  05_strings/violin_cry_phrase_1.wav             bar 220, step 1
+  06_fx/impact.wav                               bar 220, step 1
+  07_speech/forgive_me_close.wav                 bar 222, step 5
+
+
+====================================================
+NOTES
+====================================================
+- 'every bar' entries are the loop. Build one bar, then duplicate.
+- single-bar entries are one-shots: place them by hand, once.
+- Warp OFF for one-shots. Warp ON (Beats) only for *_150bpm files.
+- A few parts are processed versions of other samples (the distorted
+  violin, the corrupted strings, the tape-braked groove bar). Those
+  ship as their own files: violin_distorted_lead, strings_corrupted_*,
+  groove_1bar_150bpm.
