@@ -109,17 +109,25 @@ LAYOUT = {
     "riser_n": ("06_fx", "noise_riser_4bar"),
     "riser_n2": ("06_fx", "noise_riser_8bar"),
     "riser_s": ("06_fx", "noise_riser_2bar"),
+    # ---- voice
+    "moan_ah": ("07_voice", "moan_ah_rising"),
+    "moan_oh": ("07_voice", "moan_oh_falling"),
+    "moan_mm": ("07_voice", "moan_mm_rising"),
+    "moan_uh": ("07_voice", "moan_uh_falling"),
+    "moan_ha": ("07_voice", "moan_ha_breathy"),
+    "breath_in": ("07_voice", "breath_long"),
+    "breath_sh": ("07_voice", "breath_short"),
     # ---- speech
-    "say_close": ("07_speech", "confession_close"),
-    "say_whisper": ("07_speech", "confession_whispered"),
-    "say_choir": ("07_speech", "confession_vocoded_choir"),
-    "say_radio": ("07_speech", "confession_radio"),
-    "forgive_close": ("07_speech", "forgive_me_close"),
-    "forgive_whisper": ("07_speech", "forgive_me_whispered"),
-    "sins_close": ("07_speech", "for_all_my_sins_close"),
-    "sins_choir": ("07_speech", "for_all_my_sins_choir"),
+    "say_close": ("08_speech", "confession_close"),
+    "say_whisper": ("08_speech", "confession_whispered"),
+    "say_choir": ("08_speech", "confession_vocoded_choir"),
+    "say_radio": ("08_speech", "confession_radio"),
+    "forgive_close": ("08_speech", "forgive_me_close"),
+    "forgive_whisper": ("08_speech", "forgive_me_whispered"),
+    "sins_close": ("08_speech", "for_all_my_sins_close"),
+    "sins_choir": ("08_speech", "for_all_my_sins_choir"),
     # ---- loops
-    "groove_bar": ("08_loops", "groove_1bar_150bpm"),
+    "groove_bar": ("09_loops", "groove_1bar_150bpm"),
 }
 
 # midi -> note name, for the pitched one-shots
@@ -184,7 +192,7 @@ def main():
             ("acid_slow", TR.ACID_SEX, dict(cutoff=330, env_mod=2100, res=0.86,
                                             drive=4, decay=0.30))):
         line = I.acid(pat, TR.BPM, **kw)
-        if write(os.path.join(out, "08_loops", f"{name}_1bar_150bpm.wav"), line):
+        if write(os.path.join(out, "09_loops", f"{name}_1bar_150bpm.wav"), line):
             n += 1
 
     # raw single notes of the crying violin, for playing your own melody
@@ -215,8 +223,9 @@ is a one-shot you can trigger freely.
 04_synths       screeches, hoovers (by note), war horns, saw stabs, pads
 05_strings      the crying violin - phrases, single notes, and the section
 06_fx           impacts, risers, sub drops, reverse swells
-07_speech       the spoken line in four treatments
-08_loops        one-bar acid lines and a full groove bar
+07_voice        moans and breaths (stretched neural-TTS vowels)
+08_speech       the spoken line in four treatments
+09_loops        one-bar acid lines and a full groove bar
 
 Notes
 -----

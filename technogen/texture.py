@@ -382,3 +382,73 @@ def boom(dur=4.0, tune=42.0, seed=0, drive=6.0, size=1.0):
     x = waveshape(x, drive, sym=0.12)
     x = biquad(x, "hp", 24, 0.7)
     return normalize(x, 0.98)
+
+
+# ------------------------------------------------- voice (from neural TTS)
+
+def _vox(name):
+    from .dsp import load_wav
+    return load_wav(f"assets/{name}.wav")
+
+
+def vocal_tone(name="vox_ah", dur=3.2, bend=(0.97, 1.06, 0.99), vib=(5.0, 2.4),
+               breath=0.22, seed=0, drive=1.3, tilt=0.0):
+    """A sustained, breathing vocal note built from a held TTS vowel.
+
+    The source is a neural voice, so the timbre is a real one. Granular
+    stretching holds it without moving the formants, a slow bend gives it
+    somewhere to go, and the swell is what makes it read as breath rather
+    than a sample on a key.
+    """
+    from .dsp import granular_stretch, vibrato as vib_fx, varispeed, load_wav
+    src = _vox(name)
+    factor = max(1.2, dur * SR / max(1, len(src)))
+    x = granular_stretch(src, factor, grain=0.09, overlap=4, seed=seed)
+    n = len(x)
+    # slow pitch bend through the note
+    bend_curve = env_curve([(0.0, bend[0]), (0.45, bend[1]), (1.0, bend[2])], n)
+    x = varispeed(x, bend_curve)
+    x = vib_fx(x, vib[0], vib[1], onset=0.4)
+    n = len(x)
+    t = np.arange(n) / SR
+    env = env_curve([(0.0, 0.0), (0.18, 0.9), (0.45, 1.0), (0.75, 0.75),
+                     (1.0, 0.0)], n) ** 1.15
+    x = normalize(x, 0.9) * env
+    if breath:
+        # breath has to be set against the voice, not in absolute terms, or it
+        # buries it and the note turns back into hiss
+        b = biquad(noise(n, seed=seed + 903), "bp", 2200, 0.6)
+        b += 0.4 * biquad(noise(n, seed=seed + 904), "hp", 5000, 0.7)
+        b = biquad(b, "lp", 7000, 0.7) * env
+        rv = np.sqrt(np.mean(x ** 2)) + 1e-9
+        rb = np.sqrt(np.mean(b ** 2)) + 1e-9
+        x = x + b * (rv / rb) * breath
+    x = biquad(x, "hp", 140, 0.7)
+    x = biquad(x, "lp", 9000, 0.7)
+    if tilt:
+        x = x + tilt * biquad(x, "bp", 2600, 0.8)
+    x = tanh_drive(x, drive)
+    return normalize(x, 0.85)
+
+
+def moan(dur=3.4, kind="ah", rise=True, seed=0, breath=0.24, intensity=0.7):
+    """Breath with a voice in it. Rising or falling, never looped."""
+    name = {"ah": "vox_ah", "oh": "vox_oh", "mm": "vox_mm",
+            "uh": "vox_uh", "ha": "vox_ha"}[kind]
+    bend = (0.95, 1.08, 1.00) if rise else (1.05, 0.99, 0.92)
+    x = vocal_tone(name, dur, bend=bend, vib=(4.6 + 0.8 * (seed % 3), 2.0 + intensity),
+                   breath=breath, seed=seed, drive=1.15 + 0.4 * intensity)
+    return x
+
+
+def vocal_breath(dur=1.6, seed=0, intensity=0.8):
+    """Just the air - the TTS 'haaa' with the voiced part filtered away."""
+    from .dsp import granular_stretch
+    src = _vox("vox_ha")
+    x = granular_stretch(src, max(1.2, dur * SR / len(src)), grain=0.07, seed=seed)
+    n = len(x)
+    x = biquad(x, "hp", 900, 0.7)
+    x = biquad(x, "bp", 2600, 0.5) * 0.7 + x
+    x *= env_curve([(0, 0), (0.15, 1.0), (0.55, 0.6), (1.0, 0.0)], n) ** 1.2
+    x *= 0.6 + 0.5 * intensity
+    return normalize(x, 0.75)

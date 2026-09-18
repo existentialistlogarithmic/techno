@@ -19,8 +19,8 @@ LAMENT   bars 0-14   (Ableton bar 1, 0:00.0)
   05_strings/violin_cry_phrase_2_climax.wav      bar 7, step 1
   05_strings/violin_cry_phrase_2_octave_down.wav bar 7, step 1
   06_fx/noise_riser_8bar.wav                     bar 8, step 1
-  07_speech/confession_close.wav                 bar 3, step 5
-  07_speech/confession_whispered.wav             bar 3, step 5
+  08_speech/confession_close.wav                 bar 3, step 5
+  08_speech/confession_whispered.wav             bar 3, step 5
 
 ----------------------------------------------------
 BOOM BOOM   bars 15-15   (Ableton bar 16, 0:24.0)
@@ -138,6 +138,7 @@ TENSION   bars 64-71   (Ableton bar 65, 1:42.4)
   06_fx/noise_riser_4bar.wav                     bar 68, step 1
   06_fx/noise_riser_8bar.wav                     bar 64, step 1
   06_fx/sub_drop.wav                             bar 71, step 13
+  07_voice/breath_long.wav                       bar 71, step 9
 
 ----------------------------------------------------
 DROP 1   bars 72-103   (Ableton bar 73, 1:55.2)
@@ -180,7 +181,7 @@ DROP 1   bars 72-103   (Ableton bar 73, 1:55.2)
   04_synths/war_horn_F#1.wav                     bar 72, step 1
   06_fx/impact.wav                               bar 72, step 1
   06_fx/sub_drop.wav                             bar 103, step 13
-  07_speech/for_all_my_sins_choir.wav            bar 88, step 1
+  08_speech/for_all_my_sins_choir.wav            bar 88, step 1
 
 ----------------------------------------------------
 INTERLUDE   bars 104-111   (Ableton bar 105, 2:46.4)
@@ -195,7 +196,10 @@ INTERLUDE   bars 104-111   (Ableton bar 105, 2:46.4)
   03_textures/metal_debris_dense_150bpm.wav      bar 110, step 1
   06_fx/noise_riser_4bar.wav                     bar 108, step 1
   06_fx/sub_drop.wav                             bar 104, step 1
-  07_speech/forgive_me_close.wav                 bar 110, step 1
+  07_voice/breath_short.wav                      bar 110, step 13
+  07_voice/moan_ah_rising.wav                    bar 108, step 5
+  07_voice/moan_oh_falling.wav                   bar 105, step 9
+  08_speech/forgive_me_close.wav                 bar 110, step 1
 
 ----------------------------------------------------
 BUILD 2   bars 112-127   (Ableton bar 113, 2:59.2)
@@ -230,6 +234,7 @@ BUILD 2   bars 112-127   (Ableton bar 113, 2:59.2)
   06_fx/noise_riser_4bar.wav                     bar 124, step 1
   06_fx/noise_riser_8bar.wav                     bar 120, step 1
   06_fx/sub_drop.wav                             bar 127, step 13
+  07_voice/breath_long.wav                       bar 127, step 9
 
 ----------------------------------------------------
 DROP 2   bars 128-159   (Ableton bar 129, 3:24.8)
@@ -276,13 +281,13 @@ DROP 2   bars 128-159   (Ableton bar 129, 3:24.8)
   04_synths/war_horn_F#1.wav                     bar 128, step 1
   06_fx/impact.wav                               bar 128, step 1
   06_fx/sub_drop.wav                             bar 159, step 13
-  07_speech/for_all_my_sins_choir.wav            bar 144, step 1
+  08_speech/for_all_my_sins_choir.wav            bar 144, step 1
 
 ----------------------------------------------------
 BREAKDOWN   bars 160-175   (Ableton bar 161, 4:16.0)
 ----------------------------------------------------
   01_drums/kick_soft_distant.wav                 bars 170-175 (6x)
-  03_textures/metal_debris_sparse_150bpm.wav     bars 170-175 (6x)
+  03_textures/metal_debris_sparse_150bpm.wav     bars 173-175 (3x)
   05_strings/string_section_chords_2.wav         bars 160-168 (2x)
   02_industrial/machine_loop_low_150bpm.wav      bar 160, step 1
   02_industrial/steam_long.wav                   bar 175, step 9
@@ -293,7 +298,9 @@ BREAKDOWN   bars 160-175   (Ableton bar 161, 4:16.0)
   05_strings/cello_lament_bass.wav               bar 160, step 1
   05_strings/violin_cry_phrase_1_breakdown.wav   bar 162, step 1
   06_fx/noise_riser_4bar.wav                     bar 172, step 1
-  07_speech/confession_vocoded_choir.wav         bar 168, step 1
+  07_voice/moan_ha_breathy.wav                   bar 173, step 1
+  07_voice/moan_uh_falling.wav                   bar 162, step 1
+  08_speech/confession_vocoded_choir.wav         bar 168, step 1
 
 ----------------------------------------------------
 BUILD 3   bars 176-183   (Ableton bar 177, 4:41.6)
@@ -323,6 +330,7 @@ BUILD 3   bars 176-183   (Ableton bar 177, 4:41.6)
   03_textures/noise_bed_dark.wav                 bar 176, step 1
   06_fx/noise_riser_4bar.wav                     bar 180, step 1
   06_fx/sub_drop.wav                             bar 183, step 13
+  07_voice/breath_long.wav                       bar 183, step 9
 
 ----------------------------------------------------
 DROP 3   bars 184-215   (Ableton bar 185, 4:54.4)
@@ -370,7 +378,7 @@ DROP 3   bars 184-215   (Ableton bar 185, 4:54.4)
   05_strings/string_section_distorted.wav        bar 188, step 1
   06_fx/impact.wav                               bar 184, step 1
   06_fx/sub_drop.wav                             bar 215, step 13
-  07_speech/for_all_my_sins_choir.wav            bar 200, step 1
+  08_speech/for_all_my_sins_choir.wav            bar 200, step 1
 
 ----------------------------------------------------
 OUTRO   bars 216-223   (Ableton bar 217, 5:45.6)
@@ -394,7 +402,7 @@ OUTRO   bars 216-223   (Ableton bar 217, 5:45.6)
   05_strings/string_section_chords_1.wav         bar 220, step 1
   05_strings/violin_cry_phrase_1.wav             bar 220, step 1
   06_fx/impact.wav                               bar 220, step 1
-  07_speech/forgive_me_close.wav                 bar 222, step 5
+  08_speech/forgive_me_close.wav                 bar 222, step 5
 
 
 ====================================================

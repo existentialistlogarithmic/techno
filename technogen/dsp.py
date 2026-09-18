@@ -616,3 +616,42 @@ def transient_shape(x, attack=1.0, sustain=1.0, fast=0.003, slow=0.055):
         - (1.0 - sustain) * np.maximum(-diff, 0) / (es + 1e-6) * 0.5
     g = np.clip(g, 0.2, 4.0)
     return x * g
+
+
+def granular_stretch(x, factor=3.0, grain=0.085, overlap=4, jitter=0.25, seed=0):
+    """Lengthen a sound without changing its pitch.
+
+    Overlap-add of short windowed grains whose read position advances slower
+    than the write position. Keeps the formants where they are, which is what
+    lets a half-second vocal note become a sustained one and still sound like
+    a person rather than a slowed-down tape."""
+    n_in = x.shape[-1]
+    g = max(64, n_samples(grain))
+    hop_out = max(1, g // overlap)
+    hop_in = hop_out / max(0.05, factor)
+    n_out = int(n_in * factor) + g
+    out = np.zeros(n_out)
+    win = np.hanning(g)
+    norm = np.zeros(n_out)
+    r = np.random.default_rng(seed + 811)
+    pos_in = 0.0
+    for i in range(0, n_out - g, hop_out):
+        j = int(pos_in + r.normal(0, jitter * hop_in))
+        j = int(np.clip(j, 0, max(0, n_in - g - 1)))
+        out[i:i + g] += x[j:j + g] * win
+        norm[i:i + g] += win
+        pos_in += hop_in
+    return out / np.maximum(norm, 1e-6)
+
+
+def vibrato(x, rate=5.0, depth_ms=2.2, onset=0.35):
+    """Pitch wobble via a modulated delay - a player's vibrato, not an LFO."""
+    n = x.shape[-1]
+    t = np.arange(n) / SR
+    ramp = np.clip((t / max(0.05, onset)), 0, 1) ** 1.5
+    mod = (depth_ms / 1000.0) * SR * ramp * (0.5 + 0.5 * np.sin(TWO_PI * rate * t))
+    idx = np.arange(n) - mod
+    i0 = np.clip(np.floor(idx).astype(int), 0, n - 1)
+    i1 = np.clip(i0 + 1, 0, n - 1)
+    fr = np.clip(idx - i0, 0, 1)
+    return x[i0] * (1 - fr) + x[i1] * fr

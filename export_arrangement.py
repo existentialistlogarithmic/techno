@@ -32,8 +32,9 @@ TRACKS = [
     ("6 BASS ACID",   lambda k: False),          # filled from the acid patterns
     ("7 LEAD",        lambda k: k.startswith(("hoov", "scr_", "horn", "stab"))),
     ("8 STRINGS",     lambda k: k.startswith(("violin", "strings", "cello", "pad_"))),
-    ("9 SPEECH",      lambda k: k.startswith(("say_", "forgive_", "sins_"))),
-    ("10 FX BOOMS",   lambda k: k in ("boom", "boom2", "impact", "rev_swell",
+    ("9 VOICE",       lambda k: k.startswith(("moan_", "breath_"))),
+    ("10 SPEECH",     lambda k: k.startswith(("say_", "forgive_", "sins_"))),
+    ("11 FX BOOMS",   lambda k: k in ("boom", "boom2", "impact", "rev_swell",
                                       "sub_drop", "noise_fall", "feedback",
                                       "feedback_hi") or k.startswith("riser")),
 ]

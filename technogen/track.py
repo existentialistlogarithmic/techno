@@ -36,7 +36,7 @@ BARS = 224
 RNG = np.random.default_rng(2024)
 
 BUSES = ["kick", "kickfar", "sub", "rumble", "drums", "metal", "texture", "bass",
-         "lead", "speech", "strings", "solo", "fx", "pad", "air"]
+         "lead", "speech", "vox", "strings", "solo", "fx", "pad", "air"]
 
 TARGETS = {
     "kick":    (0.0, "low"),
@@ -49,6 +49,7 @@ TARGETS = {
     "bass":    (-0.5, "mid"),
     "lead":    (3.0, "mid"),
     "speech":  (1.0, "mid"),
+    "vox":     (-1.5, "mid"),
     "strings": (6.5, "mid"),
     "solo":    (9.0, "mid"),
     "fx":      (-1.5, "mid"),
@@ -59,7 +60,7 @@ TARGETS = {
 LOW_WEIGHT = [(0, 0.02), (13.9, 0.04), (15, 0.30), (16, 0.74), (31.9, 0.76),
               (32, 0.58), (47.9, 0.62), (48, 0.56), (56, 0.62), (63.9, 0.66),
               (64, 0.40), (71.9, 0.24), (72, 1.0),
-              (103.9, 1.0), (104, 0.30), (112, 0.52), (120, 0.62), (127.9, 0.66),
+              (103.9, 1.0), (104, 0.20), (112, 0.52), (120, 0.62), (127.9, 0.66),
               (128, 1.0), (159.9, 1.0), (160, 0.05), (168, 0.20), (176, 0.50),
               (183.9, 0.60), (184, 1.0), (215.9, 1.0), (216, 0.76), (220, 0.52),
               (224, 0.14)]
@@ -67,8 +68,8 @@ LOW_WEIGHT = [(0, 0.02), (13.9, 0.04), (15, 0.30), (16, 0.74), (31.9, 0.76),
 KICK_GAIN = [(0, 0.35), (15, 0.5), (16, 0.94), (31.9, 0.94), (32, 0.84),
              (47.9, 0.86), (48, 0.82), (56, 0.88), (63.9, 0.92), (64, 0.92),
              (71.9, 0.92), (72, 1.0), (103.9, 1.0),
-             (104, 0.62), (112, 0.82), (120, 0.90), (127.9, 0.92), (128, 1.0),
-             (159.9, 1.0), (160, 0.5), (168, 0.72), (176, 0.88), (183.9, 0.92),
+             (104, 0.50), (112, 0.82), (120, 0.90), (127.9, 0.92), (128, 1.0),
+             (159.9, 1.0), (160, 0.42), (168, 0.70), (176, 0.88), (183.9, 0.92),
              (184, 1.0), (215.9, 1.0), (216, 0.95), (221, 0.8), (224, 0.4)]
 
 KICK_TONE = [(0, 1200), (15, 3500), (16, 12000), (31.9, 12000), (32, 8000),
@@ -168,6 +169,15 @@ def build_palette():
     p["rev_swell"] = I.reverse_swell(3.2, seed=9)
     p["sub_drop"] = T.sub_drop(3.4, 120, 24)
     p["noise_fall"] = T.noise_fall(2.6, 9000, 220, seed=3)
+
+    # --- voice: sustained vowels from the female TTS voice, stretched
+    p["moan_ah"] = T.moan(3.6, "ah", True, seed=1, breath=0.22)
+    p["moan_oh"] = T.moan(4.2, "oh", False, seed=2, breath=0.26)
+    p["moan_mm"] = T.moan(3.0, "mm", True, seed=3, breath=0.18, intensity=0.55)
+    p["moan_uh"] = T.moan(3.8, "uh", False, seed=5, breath=0.24)
+    p["moan_ha"] = T.moan(3.2, "ha", True, seed=6, breath=0.30, intensity=0.85)
+    p["breath_in"] = T.vocal_breath(1.7, seed=4, intensity=0.85)
+    p["breath_sh"] = T.vocal_breath(1.0, seed=7, intensity=0.7)
 
     # --- speech
     sp = T.speech_layers("assets/confession.wav", shift=1.055, seed=1)
@@ -594,6 +604,7 @@ def build(verbose=True):
     snare_roll(s, p, 68, bars=3, gain=0.64)
     s.place("metal", p["steam"], 70, 0, gain=0.40)
     s.place("fx", p["feedback"], 70, 8, gain=0.28)
+    s.place("vox", p["breath_in"], 71, 8, gain=0.55, pan_=0.0)
     exit_(s, p, 71, power=0.7)
 
     # ------------------------------------------------------- 072-103 DROP 1
@@ -610,15 +621,18 @@ def build(verbose=True):
     s.place("drums", tape_stop(p["groove_bar"], start=0.12, end_ratio=0.035,
                                curve=1.7, max_stretch=2.6), 104, 0, gain=0.8)
     s.place("fx", p["sub_drop"], 104, 0, gain=0.55)
-    s.place("texture", p["drone_lo"], 104, 0, gain=0.40)
+    s.place("texture", p["drone_lo"], 104, 0, gain=0.28)
     s.place("metal", p["machine"], 104, 0, gain=0.44)
-    s.place("metal", p["steam"], 105, 6, gain=0.40, pan_=-0.35)
+    s.place("metal", p["steam"], 105, 6, gain=0.30, pan_=-0.35)
     for b in range(106, 112):
         for st in (0, 8):
-            s.place("kickfar", p["kick_soft"], b, st, gain=0.44)
+            s.place("kickfar", p["kick_soft"], b, st, gain=0.32)
             s.mark_kick(b, st)
         s.place("metal", p["metal_b"], b, 6, gain=0.34, pan_=RNG.uniform(-0.5, 0.5))
         s.place("texture", p["rust_a"], b, 0, gain=0.30)
+    s.place("vox", p["moan_oh"], 105, 8, gain=0.52, pan_=-0.22)
+    s.place("vox", p["moan_ah"], 108, 4, gain=0.48, pan_=0.26)
+    s.place("vox", p["breath_sh"], 110, 12, gain=0.50, pan_=-0.35)
     s.place("fx", p["feedback"], 109, 0, gain=0.26, pan_=-0.2)
     s.place("speech", p["forgive_close"], 110, 0, gain=0.52)
     approach(s, p, 112, power=0.8)
@@ -638,6 +652,7 @@ def build(verbose=True):
     s.place("fx", p["riser_n"], 124, 0, gain=0.48)
     snare_roll(s, p, 124, bars=3, gain=0.72)
     s.place("metal", p["steam"], 126, 0, gain=0.40)
+    s.place("vox", p["breath_in"], 127, 8, gain=0.55, pan_=0.0)
     exit_(s, p, 127, power=0.8)
 
     # ------------------------------------------------------- 128-159 DROP 2
@@ -653,19 +668,22 @@ def build(verbose=True):
 
     # ----------------------------------------------------- 160-175 breakdown
     log("breakdown")
-    s.place("pad", p["pad_dark"], 160, 0, gain=0.40)
+    s.place("pad", p["pad_dark"], 160, 0, gain=0.28)
     s.place("strings", p["strings_b"], 160, 0, gain=1.40)
     s.place("strings", p["cello"], 160, 0, gain=1.10)
     s.place("solo", p["violin_a2"], 162, 0, gain=1.0, pan_=-0.05)
     s.place("texture", p["drone_lo"], 160, 0, gain=0.30)
-    s.place("metal", p["machine_lo"], 160, 0, gain=0.28)
+    s.place("metal", p["machine_lo"], 160, 0, gain=0.20)
+    s.place("vox", p["moan_uh"], 162, 0, gain=0.40, pan_=0.24)
     s.place("speech", p["say_choir"], 168, 0, gain=0.46)
+    s.place("vox", p["moan_ha"], 173, 0, gain=0.40, pan_=-0.15)
     s.place("strings", p["strings_b"], 168, 0, gain=1.25)
     for b in range(170, 176):
         for st in (0, 8):
             s.place("kickfar", p["kick_soft"], b, st, gain=0.40 + 0.035 * (b - 170))
             s.mark_kick(b, st)
-        s.place("texture", p["rust_a"], b, 0, gain=0.34)
+        if b >= 173:
+            s.place("texture", p["rust_a"], b, 0, gain=0.26)
     approach(s, p, 176, power=0.9)
 
     # -------------------------------------------------------- 176-183 build 3
@@ -679,6 +697,7 @@ def build(verbose=True):
     snare_roll(s, p, 180, bars=3, gain=0.78)
     s.place("metal", p["steam"], 182, 0, gain=0.42)
     s.place("fx", p["feedback_hi"], 182, 8, gain=0.26)
+    s.place("vox", p["breath_in"], 183, 8, gain=0.55, pan_=0.0)
     exit_(s, p, 183, power=0.9)
 
     # -------------------------------------------------------- 184-215 DROP 3
@@ -802,6 +821,17 @@ def process_buses(s, p, verbose=True):
     s.buses["speech"] = biquad(s.buses["speech"], "hp", 110, 0.7)
     s.buses["speech"] = s.buses["speech"] + 0.16 * biquad(s.buses["speech"], "bp", 2400, 0.7)
 
+    log("voice")
+    # close, wide and nearly dry: a moan drowned in reverb is a ghost again
+    s.buses["vox"] = send_reverb(s.buses["vox"], 0.20, rt60=1.9, damp=0.74,
+                                 hp=260, predelay=0.020, seed=171)
+    s.buses["vox"] = send_delay(s.buses["vox"], 0.12, s.step * 6, feedback=0.24,
+                                damp=3200)
+    s.buses["vox"] = widen(s.buses["vox"], 0.70, 19.0)
+    s.buses["vox"] = biquad(s.buses["vox"], "hp", 150, 0.7)
+    s.buses["vox"] = s.buses["vox"] + 0.10 * biquad(s.buses["vox"], "hp", 6000, 0.7)
+    s.buses["vox"] = drive_os(s.buses["vox"], 1.3, os=2)
+
     s.buses["fx"] = send_reverb(s.buses["fx"], 0.32, rt60=2.4, damp=0.62, hp=180, seed=71)
     s.buses["fx"] = widen(s.buses["fx"], 0.5, 14.0)
     s.buses["pad"] = send_reverb(s.buses["pad"], 0.60, rt60=3.4, damp=0.74, hp=220,
@@ -823,7 +853,7 @@ def process_buses(s, p, verbose=True):
     light = s.duck_envelope(depth=0.34, attack=0.005, hold=0.012, release=0.10)
     s.apply_duck(["rumble", "sub"], deep)
     s.apply_duck(["bass", "pad", "metal", "strings", "texture"], mid)
-    s.apply_duck(["lead", "speech", "solo", "fx", "drums", "air"], light)
+    s.apply_duck(["lead", "speech", "vox", "solo", "fx", "drums", "air"], light)
     return s.buses
 
 
