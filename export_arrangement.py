@@ -83,16 +83,15 @@ def write_multitrack(path, tracks, bpm=150.0, ppq=PPQ):
             f.write(b"MTrk" + struct.pack(">I", len(c)) + c)
 
 
-def main():
-    out = sys.argv[1] if len(sys.argv) > 1 else "CONCRETE_CATHEDRAL_arrangement.mid"
-    print("reading the arrangement...")
+def _record():
+    """Run build() with place() and lay_acid() instrumented, and return the
+    notes grouped per Ableton track."""
     p = TR.build_palette()
     by_id = {id(v): k for k, v in p.items()}
     real_palette = TR.build_palette
     TR.build_palette = lambda *a, **k: p
 
-    events = []
-    acid_spans = []
+    events, acid_spans = [], []
     orig_place, orig_acid = Session.place, TR.lay_acid
 
     def spy(self, name, x, bar, step=0.0, gain=1.0, pan_=0.0, reverse=False):
@@ -114,10 +113,7 @@ def main():
         Session.place, TR.lay_acid = orig_place, orig_acid
         TR.build_palette = real_palette
 
-    # assign a midi note per sample, per track
-    note_of, used = {}, defaultdict(int)
-    track_notes = defaultdict(list)
-    track_of = {}
+    note_of, used, track_of = {}, defaultdict(int), {}
     for key in sorted({e[2] for e in events if e[2]}):
         if filename_for(key) is None:
             continue
@@ -128,6 +124,7 @@ def main():
                 used[tname] += 1
                 break
 
+    track_notes = defaultdict(list)
     for bar, step, key, gain, nsamp in events:
         if key not in note_of:
             continue
@@ -139,10 +136,8 @@ def main():
 
     for b0, b1, nm in acid_spans:
         pat = getattr(TR, nm)
-        one = sum(s[1] for s in pat) * STEP
         for b in range(b0, b1):
-            base = b * 16 * STEP
-            pos = 0
+            base, pos = b * 16 * STEP, 0
             for midi, steps, acc, slide in pat:
                 d = steps * STEP
                 if midi is not None:
@@ -150,6 +145,24 @@ def main():
                         (base + pos, int(d * (1.6 if slide else 0.85)), midi,
                          118 if acc else 86))
                 pos += d
+    return track_notes, note_of, track_of
+
+
+def build_events():
+    """[(track name, [(start_beat, dur_beat, key, vel), ...]), ...] + bars."""
+    notes, _, _ = _record()
+    out = []
+    for tname, _t in TRACKS:
+        out.append((tname, [(s / PPQ, d / PPQ, k, v)
+                            for s, d, k, v in sorted(notes[tname])]))
+    last = max((s + d for _, rows in out for s, d, _, _ in rows), default=0)
+    return out, int(last / 4) + 8
+
+
+def main():
+    out = sys.argv[1] if len(sys.argv) > 1 else "CONCRETE_CATHEDRAL_arrangement.mid"
+    print("reading the arrangement...")
+    track_notes, note_of, track_of = _record()
 
     tracks = [(n, sorted(track_notes[n])) for n, _ in TRACKS if track_notes[n]]
     write_multitrack(out, tracks, TR.BPM)
@@ -158,7 +171,7 @@ def main():
 
     lines = ["CONCRETE CATHEDRAL - arrangement MIDI",
              "=" * 46, "",
-             "One MIDI track per part, 224 bars, 150 BPM.",
+             "One MIDI track per part, 150 BPM.",
              "Drop the listed sample on the listed note in a Drum Rack",
              "(or Simpler set to the right note) and the part plays itself.",
              ""]
