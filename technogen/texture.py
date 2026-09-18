@@ -277,3 +277,87 @@ def whoosh(dur=2.2, up=True, seed=0, f_lo=250.0, f_hi=9000.0):
     x += 0.5 * sweep(noise(n, seed=seed + 202), "hp", f * 0.7, 0.7)
     env = (p ** 2.0) if up else np.exp(-p * 2.6)
     return normalize(x * env, 0.8)
+
+
+# ------------------------------------------------- dark industrial textures
+
+def drone(dur, tune=41.0, drive=5.0, seed=0, movement=0.05):
+    """A low, distorted, slowly moving drone. Dread, not melody."""
+    n = n_samples(dur)
+    t = np.arange(n) / SR
+    x = saw(tune, n) + 0.8 * saw(tune * 1.004, n) + 0.6 * square(tune * 0.5, n, 0.46)
+    x += 0.4 * saw(tune * 2.002, n)
+    co = tune * (7.0 + 4.0 * np.sin(TWO_PI * movement * t))
+    x = ladder(x, np.clip(co, 90, 2600), 0.45)
+    x = drive_os(x * 2.0, drive)
+    x = biquad(x, "hp", 32, 0.7)
+    return normalize(x, 0.8)
+
+
+def noise_bed(dur, seed=0, lo=140.0, hi=5200.0, motion=0.045, grit=0.4):
+    """Filtered noise that sits under the whole track: air moving through a
+    building, not a sweep effect."""
+    n = n_samples(dur)
+    t = np.arange(n) / SR
+    x = noise(n, seed=seed + 301)
+    co = np.exp(np.log(lo) + (np.log(hi) - np.log(lo))
+                * (0.5 + 0.5 * np.sin(TWO_PI * motion * t)))
+    x = sweep(x, "bp", co, 0.9, stages=2, block=512)
+    if grit:
+        x = (1 - grit) * x + grit * drive_os(x * 3.0, 3.0)
+    return normalize(x, 0.7)
+
+
+def hammer(dur=1.6, tune=98.0, seed=0, drive=7.0):
+    """Something heavy hitting something heavier."""
+    n = n_samples(dur)
+    t = np.arange(n) / SR
+    low = np.sin(TWO_PI * np.cumsum(tune + 320 * np.exp(-t / 0.016)) / SR)
+    low *= np.exp(-t / 0.16)
+    plate = metal(dur, tune * 3.1, PLATE_RATIOS, decay=0.28, noise_amt=0.6,
+                  seed=seed, drive=3.0)
+    crack = biquad(noise(n, seed=seed + 9), "bp", 1700, 0.7) * env_exp(n, 0.012, 0.0003)
+    x = 1.0 * low + 0.7 * fit(plate, n) + 0.55 * crack
+    return normalize(waveshape(x, drive, sym=0.15), 0.95)
+
+
+def rust(dur, bpm, seed=0, density=0.55):
+    """Granular metal debris - fills the gaps between the drums without
+    sounding like an effect."""
+    n = n_samples(dur)
+    step = 60.0 / bpm / 8.0
+    r = np.random.default_rng(seed + 401)
+    x = np.zeros(n)
+    for i in range(int(dur / step)):
+        if r.random() > density:
+            continue
+        pos = n_samples(i * step + r.uniform(-0.004, 0.004))
+        ln = n_samples(r.uniform(0.008, 0.035))
+        if pos < 0 or pos + ln >= n:
+            continue
+        g = biquad(noise(ln, seed=seed + i), "bp", r.uniform(1800, 9000), r.uniform(3, 12))
+        g *= env_exp(ln, r.uniform(0.002, 0.012), 0.0002)
+        x[pos:pos + ln] += g * r.uniform(0.2, 1.0)
+    return normalize(biquad(x, "hp", 900, 0.7), 0.7)
+
+
+def feedback_tone(dur=2.0, freq=1850.0, seed=0, drive=8.0, wobble=0.8):
+    """A PA on the edge of feeding back. Static, not a swoop."""
+    n = n_samples(dur)
+    t = np.arange(n) / SR
+    f = freq * (1.0 + 0.012 * np.sin(TWO_PI * wobble * t))
+    x = np.sin(TWO_PI * np.cumsum(f) / SR) + 0.4 * np.sin(TWO_PI * np.cumsum(f * 2) / SR)
+    x += 0.25 * biquad(noise(n, seed=seed + 501), "bp", freq, 30.0)
+    x = drive_os(x * 2.0, drive)
+    x *= env_curve([(0, 0), (0.08, 1), (0.7, 0.9), (1, 0)], n)
+    return normalize(x, 0.75)
+
+
+def noise_riser(dur, seed=0, f_lo=300.0, f_hi=7000.0, q=1.1):
+    """A rise built from filtered noise only - no pitched sweep."""
+    n = n_samples(dur)
+    p = np.arange(n) / n
+    f = f_lo * (f_hi / f_lo) ** (p ** 1.5)
+    x = sweep(noise(n, seed=seed + 601), "bp", f, q, stages=2, block=384)
+    x += 0.35 * sweep(noise(n, seed=seed + 602), "hp", f * 0.8, 0.7, block=384)
+    return normalize(x * (p ** 2.0), 0.8)

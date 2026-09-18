@@ -16,28 +16,29 @@ Renders in about five minutes. `--mp3` needs `pip install lameenc`.
 
 ## The track
 
-150 BPM, F# minor, 6:22, 234 bars.
+150 BPM, F# minor, 6:06, 224 bars.
 
-| time | bars | section | what happens |
-|---|---|---|---|
-| 0:00 | 0–23 | lament | solo violin over a string section, the confession, a scream far away |
-| 0:38 | 24–31 | the turn | the strings are fed through the machine, four stages of corruption |
-| 0:51 | 32–47 | industrial groove | struck metal and a conveyor loop; the kick is still small and dark |
-| 1:16 | 48–63 | build 1 | kick opens bar by bar, acid enters |
-| 1:42 | 64–71 | pre-drop | accelerating roll, risers, steam, cut |
-| **1:55** | 72–103 | **drop 1** | war horn, kick, rumble, hoover riff, screeches, siren |
-| 2:46 | 104–111 | transition | the groove braked like tape, sub drop, a ghost of the theme |
-| 2:59 | 112–127 | dark mid | swung shakers, slow acid, gated pad, moans and breath |
-| 3:24 | 128–143 | build 2 | industrial percussion returns |
-| **3:50** | 144–175 | **drop 2** | harder kick, second hoover riff, screech lead, vocoded choir |
-| 4:41 | 176–191 | breakdown | the violin comes back, whole, over dark pads |
-| 5:07 | 192–199 | build 3 | short and fast |
-| **5:20** | 200–223 | **drop 3** | the lament returns as a distorted lead over the hardest kick |
-| 5:58 | 224–233 | outro | strips to the machine room, the violin, and *"forgive me"* |
+| time | bars | section |
+|---|---|---|
+| 0:00 | 0–15 | lament — solo violin over a string section, then the confession |
+| 0:25 | 16–31 | the turn — the strings are fed through the machine in four stages |
+| 0:51 | 32–47 | groove — kick, struck metal, conveyor, no melody |
+| 1:16 | 48–63 | build 1 |
+| 1:42 | 64–71 | tension |
+| **1:55** | 72–103 | **drop 1** |
+| 2:46 | 104–111 | interlude — tape brake, machine room |
+| 2:59 | 112–127 | build 2 |
+| **3:24** | 128–159 | **drop 2** |
+| 4:16 | 160–175 | breakdown — the violin returns whole |
+| 4:41 | 176–183 | build 3 |
+| **4:54** | 184–215 | **drop 3** — the lament played by the machine |
+| 5:45 | 216–223 | outro |
 
-The theme is stated clean, corrupted in the turn, glimpsed in the transition,
-restored in the breakdown and finally played by the machine in drop 3. That is
-the whole structure; everything else is arrangement.
+Every drop is built by the same function, `drop_core()`: one locked pattern
+that changes on the eight and takes a fill on the bar before the change.
+Discipline over variety — nothing happens once, because a hard techno drop that
+keeps surprising you is just a mess. What differs between drops is intensity:
+kick model, acid pattern, whether the screech lead is running.
 
 ## How it is built
 
@@ -83,7 +84,20 @@ finger is ever still. `ensemble()` is not a chorus effect — each player gets
 their own vibrato rate, tuning offset and entry time. `desecrate()` is what the
 rave does to it.
 
-**Screams** — a scream is not a loud vowel. It needs pitch an octave above
+**What is deliberately not here** — an earlier version had synthesised moans,
+whispers, vowel-babble chatter and screams, all built on the same formant
+engine. Formant synthesis without a real glottal model does not sound like a
+person, it sounds like a theremin, and in a techno context it reads as a
+cartoon ghost. Pitch-swept sirens, zaps and downlifters have the same problem.
+All of it is gone. The only voice left is real recorded-style speech from
+neural TTS, used three times. Everything else is drums, metal, noise and
+strings.
+
+The mix is also much drier than a pop mix on purpose. Hard techno lives close
+to the speaker; long tails on every bus is what turns a busy arrangement to
+mud. Only the rumble, the strings and the speech get a real room.
+
+**Screams (removed, kept for reference)** — a scream is not a loud vowel. It needs pitch an octave above
 speech, jitter from a lowpassed random walk, a subharmonic rattle where the
 folds stop tracking, turbulence, and a tract driven past its linear range.
 `scream_help()` shapes the word as `h-eh-l-p`: aspiration, vowel, lateral,

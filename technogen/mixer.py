@@ -185,7 +185,7 @@ def measure_bands(x, sr=SR, loud_only=True):
     return [P[(f >= a) & (f < b)].sum() + 1e-18 for a, b, _ in TILT_TARGET]
 
 
-def tilt_match(x, max_db=13.0, passes=5, verbose=True):
+def tilt_match(x, max_db=15.0, passes=8, verbose=True):
     """Bounded corrective EQ that pulls the mix onto TILT_TARGET.
 
     The corrections are applied as overlapping peaking filters, so a cut in
