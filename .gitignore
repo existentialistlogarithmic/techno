@@ -10,3 +10,7 @@ stems/
 midi/
 sounds_mp3/
 ALL_mp3/
+ABLETON/
+PLACEMENT_GUIDE.txt
+*.mid
+*_map.txt
