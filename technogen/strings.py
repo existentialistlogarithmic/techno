@@ -38,8 +38,16 @@ def _body(x, table, direct=0.55):
 
 def bowed(midi, dur, vel=0.75, body=VIOLIN_BODY, seed=0, glide_from=None,
           vib_rate=5.7, vib_depth=0.0055, vib_delay=0.28, bow_noise=0.10,
-          attack=0.075, release=0.30, bright=1.0, tremolo=0.0, sul_pont=0.0):
-    """One bowed note."""
+          attack=0.075, release=0.30, bright=1.0, tremolo=0.0, sul_pont=0.0,
+          porta=0.09, swell=0.0, sob=0.0, vib_growth=0.0, strain=0.0):
+    """One bowed note.
+
+    The expressive parameters are what separate a sad note from a crying one:
+    `porta` slides into the note instead of arriving at it, `vib_growth` widens
+    the vibrato as the note is held, `swell` leans into the middle of the bow,
+    `sob` breaks the tone into catches, and `strain` pushes slightly sharp at
+    the peak the way a player does when pressing into a phrase.
+    """
     n = n_samples(dur)
     if n < 64:
         return np.zeros(max(1, n))
@@ -47,20 +55,24 @@ def bowed(midi, dur, vel=0.75, body=VIOLIN_BODY, seed=0, glide_from=None,
     r = np.random.default_rng(seed * 977 + int(midi))
 
     f0 = note_hz(midi)
-    if glide_from is not None:
-        g = min(n, n_samples(0.09))
-        track = np.full(n, f0)
-        track[:g] = np.geomspace(note_hz(glide_from), f0, g)
-    else:
-        track = np.full(n, f0)
+    track = np.full(n, f0)
+    if glide_from is not None and porta > 0:
+        g = min(n, n_samples(porta))
+        if g > 1:
+            # an S-curve, not a ramp: a finger leaves slowly and arrives fast
+            k = np.linspace(0.0, 1.0, g)
+            k = k * k * (3.0 - 2.0 * k)
+            track[:g] = note_hz(glide_from) * (f0 / note_hz(glide_from)) ** k
 
     # vibrato arrives after the note has spoken, as a player's does
     onset = np.clip((t - vib_delay) / max(0.05, 0.35), 0.0, 1.0) ** 1.5
-    vib = np.sin(TWO_PI * vib_rate * t + r.random() * TWO_PI) * vib_depth * onset
+    depth = vib_depth * (1.0 + vib_growth * np.clip(t / max(0.2, dur * 0.7), 0, 1.4))
+    vib = np.sin(TWO_PI * vib_rate * t + r.random() * TWO_PI) * depth * onset
     # small pitch drift: the finger is never perfectly still
     drift = biquad(r.standard_normal(n), "lp", 3.5, 0.7)
     drift /= (np.max(np.abs(drift)) + 1e-9)
-    f = track * (1.0 + vib + 0.0016 * drift)
+    push = strain * 0.004 * np.sin(np.pi * np.clip(t / dur, 0, 1)) ** 2
+    f = track * (1.0 + vib + push + 0.0016 * drift)
 
     src = saw(f, n)
     # bow pressure sets how many harmonics survive
@@ -80,6 +92,13 @@ def bowed(midi, dur, vel=0.75, body=VIOLIN_BODY, seed=0, glide_from=None,
                      (max(0.55, 1.0 - release / dur), 0.88), (1.0, 0.0)], n)
     # bow speed wavers; that waver is most of what "expressive" means
     amp *= 1.0 + 0.09 * biquad(r.standard_normal(n), "lp", 2.2, 0.7) / 3.0
+    if swell:
+        # lean into the middle of the bow and fall away
+        amp *= 1.0 + swell * (np.sin(np.pi * np.clip(t / dur, 0, 1)) ** 1.6 - 0.35)
+    if sob:
+        # the catch in the voice, arriving only once the note is established
+        catch = np.clip((t - 0.25 * dur) / max(0.1, 0.35 * dur), 0, 1)
+        amp *= 1.0 - sob * 0.38 * catch * (0.5 + 0.5 * np.sin(TWO_PI * 5.2 * t))
     if tremolo:
         amp *= 1.0 - tremolo * 0.5 * (0.5 + 0.5 * np.sin(TWO_PI * 7.5 * t))
     x = x * amp * (0.35 + 0.85 * vel)
@@ -88,16 +107,21 @@ def bowed(midi, dur, vel=0.75, body=VIOLIN_BODY, seed=0, glide_from=None,
 
 
 def phrase(notes, bpm, beat_unit=1.0, legato=1.12, vel=0.75, body=VIOLIN_BODY,
-           seed=0, glide=True, **kw):
-    """Play a melody. notes is [(midi|None, beats), ...]."""
+           seed=0, glide=True, rubato=0.0, **kw):
+    """Play a melody. notes is [(midi|None, beats), ...].
+
+    `rubato` lets the phrase breathe: a player does not place notes on a grid,
+    and a metronomic lament sounds like a sequencer.
+    """
     beat = 60.0 / bpm * beat_unit
+    rr = np.random.default_rng(seed + 77)
     total = sum(b for _, b in notes) * beat
     n = n_samples(total) + n_samples(1.5)
     out = np.zeros(n)
     pos = 0.0
     prev = None
     for midi, beats in notes:
-        ln = beats * beat
+        ln = beats * beat * (1.0 + rubato * rr.normal(0, 0.055))
         if midi is not None:
             x = bowed(midi, ln * legato, vel=vel, body=body, seed=seed,
                       glide_from=prev if (glide and prev is not None) else None, **kw)

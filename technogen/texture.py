@@ -361,3 +361,24 @@ def noise_riser(dur, seed=0, f_lo=300.0, f_hi=7000.0, q=1.1):
     x = sweep(noise(n, seed=seed + 601), "bp", f, q, stages=2, block=384)
     x += 0.35 * sweep(noise(n, seed=seed + 602), "hp", f * 0.8, 0.7, block=384)
     return normalize(x * (p ** 2.0), 0.8)
+
+
+def boom(dur=4.0, tune=42.0, seed=0, drive=6.0, size=1.0):
+    """The hit. A sub that falls, a wall of driven noise, and metal on top."""
+    n = n_samples(dur)
+    t = np.arange(n) / SR
+    # the sub: starts high enough to be heard, ends where it is only felt
+    f = (tune + 46.0 * size) * (0.42 / 1.0) ** np.clip(t / (dur * 0.42), 0, 1) ** 0.6
+    sub = np.sin(TWO_PI * np.cumsum(np.maximum(f, 26.0)) / SR)
+    sub *= np.exp(-t / (0.55 * size)) * (1 - np.exp(-t / 0.0015))
+
+    body = biquad(noise(n, seed=seed + 701), "lp", 900, 0.7) * np.exp(-t / 0.18)
+    body += biquad(noise(n, seed=seed + 702), "bp", 220, 1.1) * np.exp(-t / 0.30)
+    crack = biquad(noise(n, seed=seed + 703), "hp", 2600, 0.7) * env_exp(n, 0.02, 0.0004)
+    plate = fit(metal(dur * 0.8, 120 * size, PLATE_RATIOS, decay=0.5, noise_amt=0.5,
+                      seed=seed + 5, drive=3.0), n)
+
+    x = 1.15 * sub + 0.62 * body + 0.40 * crack + 0.55 * plate
+    x = waveshape(x, drive, sym=0.12)
+    x = biquad(x, "hp", 24, 0.7)
+    return normalize(x, 0.98)

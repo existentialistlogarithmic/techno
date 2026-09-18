@@ -20,9 +20,10 @@ Renders in about five minutes. `--mp3` needs `pip install lameenc`.
 
 | time | bars | section |
 |---|---|---|
-| 0:00 | 0–15 | lament — solo violin over a string section, then the confession |
-| 0:25 | 16–31 | the turn — the strings are fed through the machine in four stages |
-| 0:51 | 32–47 | groove — kick, struck metal, conveyor, no melody |
+| 0:00 | 0–14 | lament — a violin crying, the confession, the room draining away |
+| **0:24** | 15 | **BOOM. BOOM.** two hits into silence |
+| 0:25 | 16–31 | the machine — full kick, metal, the lament coming apart over the top |
+| 0:51 | 32–47 | groove |
 | 1:16 | 48–63 | build 1 |
 | 1:42 | 64–71 | tension |
 | **1:55** | 72–103 | **drop 1** |
@@ -34,11 +35,10 @@ Renders in about five minutes. `--mp3` needs `pip install lameenc`.
 | **4:54** | 184–215 | **drop 3** — the lament played by the machine |
 | 5:45 | 216–223 | outro |
 
-Every drop is built by the same function, `drop_core()`: one locked pattern
-that changes on the eight and takes a fill on the bar before the change.
-Discipline over variety — nothing happens once, because a hard techno drop that
-keeps surprising you is just a mess. What differs between drops is intensity:
-kick model, acid pattern, whether the screech lead is running.
+Every drop is built by `drop_core()`: one locked pattern that changes on the
+eight and takes a fill on the bar before the change. Nothing happens once.
+Drops differ by intensity — kick model, acid pattern, whether the screech lead
+runs — not by content.
 
 ## How it is built
 
@@ -73,6 +73,24 @@ scream.
 its own decay so the highs die first, plus a noise transient filtered by the
 same resonances. Harmonic ratios sound like a bell; inharmonic ones sound like
 something industrial being hit.
+
+**Making a violin cry** — a sad melody is not a crying one. Four things do the
+work, and `bowed()` takes them as parameters: `porta` slides into each note on
+an S-curve instead of arriving at it (a finger leaves slowly and lands fast);
+`vib_growth` widens the vibrato as a note is held, measured going from ±17 to
+±41 cents across one bow, which is the expressive range without tipping into
+seasick; `swell` leans into the middle of the bow and falls away, giving 20 dB
+of movement inside a single phrase; and `sob` puts a catch in the tone that
+only arrives once the note has spoken. `strain` pushes very slightly sharp at
+the peak, the way players do when they lean on a phrase. `rubato` in `phrase()`
+keeps it off the grid. The melody itself is built on falling semitone pairs —
+the sigh figure — and the second phrase climbs instead of falling, which is
+what turns grief into panic.
+
+**The hit** — `boom()` is a sub that falls from where it can be heard to where
+it can only be felt, under driven noise and a struck plate. Two of them into a
+bar of near-silence: the bar before measures −18.7 dB, the hit −7.6 dB. An
+11 dB slam is the whole trick; it only works because the bar before it is empty.
 
 **Violin** — a bowed string is close to a sawtooth, but a plain saw sounds
 like a synth. What makes it read as a violin is everything around the saw: a

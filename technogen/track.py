@@ -45,7 +45,7 @@ TARGETS = {
     "rumble":  (-8.0, "low"),
     "drums":   (1.0, "mid"),
     "metal":   (0.5, "mid"),
-    "texture": (-3.0, "mid"),
+    "texture": (-5.5, "mid"),
     "bass":    (-0.5, "mid"),
     "lead":    (3.0, "mid"),
     "speech":  (1.0, "mid"),
@@ -56,21 +56,24 @@ TARGETS = {
     "air":     (-17.0, "mid"),
 }
 
-LOW_WEIGHT = [(0, 0.02), (16, 0.06), (24, 0.16), (32, 0.46), (40, 0.50), (48, 0.54),
-              (56, 0.60), (63.9, 0.64), (64, 0.38), (71.9, 0.22), (72, 1.0),
+LOW_WEIGHT = [(0, 0.02), (13.9, 0.04), (15, 0.30), (16, 0.74), (31.9, 0.76),
+              (32, 0.58), (47.9, 0.62), (48, 0.56), (56, 0.62), (63.9, 0.66),
+              (64, 0.40), (71.9, 0.24), (72, 1.0),
               (103.9, 1.0), (104, 0.30), (112, 0.52), (120, 0.62), (127.9, 0.66),
               (128, 1.0), (159.9, 1.0), (160, 0.05), (168, 0.20), (176, 0.50),
               (183.9, 0.60), (184, 1.0), (215.9, 1.0), (216, 0.76), (220, 0.52),
               (224, 0.14)]
 
-KICK_GAIN = [(0, 0.35), (24, 0.48), (32, 0.80), (40, 0.84), (48, 0.86), (56, 0.90),
-             (63.9, 0.92), (64, 0.92), (71.9, 0.92), (72, 1.0), (103.9, 1.0),
+KICK_GAIN = [(0, 0.35), (15, 0.5), (16, 0.94), (31.9, 0.94), (32, 0.84),
+             (47.9, 0.86), (48, 0.82), (56, 0.88), (63.9, 0.92), (64, 0.92),
+             (71.9, 0.92), (72, 1.0), (103.9, 1.0),
              (104, 0.62), (112, 0.82), (120, 0.90), (127.9, 0.92), (128, 1.0),
              (159.9, 1.0), (160, 0.5), (168, 0.72), (176, 0.88), (183.9, 0.92),
              (184, 1.0), (215.9, 1.0), (216, 0.95), (221, 0.8), (224, 0.4)]
 
-KICK_TONE = [(0, 1200), (24, 1600), (32, 2600), (40, 3400), (48, 4200), (56, 5000),
-             (63.9, 5400), (64, 5600), (71.9, 5600), (72, 20000), (103.9, 20000),
+KICK_TONE = [(0, 1200), (15, 3500), (16, 12000), (31.9, 12000), (32, 8000),
+             (47.9, 9000), (48, 6500), (56, 7500), (63.9, 8000), (64, 6000),
+             (71.9, 6000), (72, 20000), (103.9, 20000),
              (104, 2600), (112, 5600), (120, 8000), (127.9, 9500), (128, 20000),
              (159.9, 20000), (160, 2400), (168, 4400), (176, 6500), (183.9, 7500),
              (184, 20000), (219, 20000), (222, 7000), (224, 1800)]
@@ -78,20 +81,22 @@ KICK_TONE = [(0, 1200), (24, 1600), (32, 2600), (40, 3400), (48, 4200), (56, 500
 
 # ------------------------------------------------------------- the lament
 
-LAMENT_A = [(73, 3), (71, 1), (69, 4),
-            (71, 2), (69, 2), (68, 4),
-            (66, 4), (69, 2), (68, 2),
-            (66, 5), (None, 3)]
+# Written in half-time so it breathes at 150 BPM. The falling semitone pairs
+# (D-C#, E-D) are the sigh figure; the second phrase climbs instead of falling,
+# which is what turns grief into panic.
+CRY_A = [(78, 3), (76, 1), (74, 4), (73, 2), (74, 2), (73, 2)]
+CRY_B = [(73, 2), (74, 2), (76, 3), (74, 1), (78, 3), (76, 1), (81, 2)]
 
-LAMENT_B = [(78, 3), (76, 1), (74, 4),
-            (73, 2), (71, 2), (69, 4),
-            (68, 4), (66, 4),
-            (64, 6), (None, 2)]
+# how the solo line is played: slides between notes, vibrato that widens on a
+# held note, a leaning bow, and a catch in the tone
+CRY = dict(porta=0.22, swell=0.55, sob=0.45, vib_growth=1.35, strain=0.8,
+           vib_depth=0.0082, vib_rate=6.0, vib_delay=0.16, bow_noise=0.13,
+           attack=0.10, release=0.38)
 
-LAMENT_CHORDS = [([42, 54, 57, 61], 8), ([38, 50, 57, 62], 8),
-                 ([45, 52, 57, 64], 8), ([40, 52, 56, 64], 8)]
+LAMENT_CHORDS = [([42, 54, 57, 61], 7), ([38, 50, 57, 62], 7),
+                 ([45, 52, 57, 64], 7), ([40, 52, 56, 64], 7)]
 
-LAMENT_BASS = [(42, 8), (40, 8), (38, 8), (37, 8)]
+LAMENT_BASS = [(42, 7), (40, 7), (38, 7), (37, 7)]
 
 def build_palette():
     p = {}
@@ -180,6 +185,8 @@ def build_palette():
     p["bed_b"] = T.noise_bed(25.6, seed=2, lo=500, hi=9000, motion=0.07, grit=0.5)
     p["rust_a"] = T.rust(6.4, BPM, seed=1, density=0.45)
     p["rust_b"] = T.rust(6.4, BPM, seed=2, density=0.65)
+    p["boom"] = T.boom(4.2, 42, seed=1, drive=6.0, size=1.0)
+    p["boom2"] = T.boom(5.0, 39, seed=2, drive=7.0, size=1.15)
     p["hammer"] = T.hammer(1.8, 98, seed=1)
     p["hammer_lo"] = T.hammer(2.4, 66, seed=2, drive=8)
     p["feedback"] = T.feedback_tone(2.4, 1850, seed=1)
@@ -193,10 +200,17 @@ def build_palette():
     p["horn_hi"] = T.war_horn(49, 2.4, drive=8, growl=0.6)
 
     # --- the lament
-    p["violin_a"] = ST.phrase(LAMENT_A, BPM, beat_unit=2.0, vel=0.72, seed=1)
-    p["violin_b"] = ST.phrase(LAMENT_B, BPM, beat_unit=2.0, vel=0.78, seed=2)
-    p["violin_a2"] = ST.phrase(LAMENT_A, BPM, beat_unit=2.0, vel=0.80, seed=5,
-                               bright=1.15)
+    p["violin_a"] = ST.phrase(CRY_A, BPM, beat_unit=2.0, vel=0.74, seed=1,
+                              legato=1.28, rubato=0.55, **CRY)
+    p["violin_b"] = ST.phrase(CRY_B, BPM, beat_unit=2.0, vel=0.86, seed=2,
+                              legato=1.28, rubato=0.5, **{**CRY, "sob": 0.55,
+                                                          "strain": 1.0})
+    # an octave below, doubling the second phrase so the climax has weight
+    p["violin_b_low"] = ST.phrase([(m - 12 if m else None, b) for m, b in CRY_B],
+                                  BPM, beat_unit=2.0, vel=0.62, seed=9,
+                                  legato=1.28, rubato=0.5, **CRY)
+    p["violin_a2"] = ST.phrase(CRY_A, BPM, beat_unit=2.0, vel=0.84, seed=5,
+                               legato=1.28, rubato=0.5, bright=1.15, **CRY)
     p["strings_a"] = ST.chords(LAMENT_CHORDS, BPM, players=3, vel=0.55, seed=3)
     p["strings_b"] = ST.chords(LAMENT_CHORDS, BPM, players=4, vel=0.65, seed=4)
     p["cello"] = ST.phrase(LAMENT_BASS, BPM, beat_unit=1.0, vel=0.62,
@@ -492,51 +506,66 @@ def build(verbose=True):
     for b in range(0, BARS, 16):
         s.place("texture", p["bed_a" if (b // 16) % 2 else "bed_b"], b, 0, gain=0.34)
 
-    # --------------------------------------------------------- 000-015 lament
+    # ------------------------------------------------- 000-014 lament (crying)
     log("lament")
     s.place("strings", p["strings_a"], 0, 0, gain=1.45)
     s.place("strings", p["cello"], 0, 0, gain=1.15)
-    s.place("solo", p["violin_a"], 0, 0, gain=1.0, pan_=-0.08)
-    s.place("strings", p["strings_a"], 8, 0, gain=1.40)
-    s.place("strings", p["cello"], 8, 0, gain=1.10)
-    s.place("texture", p["drone_lo"], 8, 0, gain=0.45)
-    s.place("metal", p["machine_lo"], 8, 0, gain=0.40)
-    s.place("speech", p["say_close"], 11, 4, gain=0.80)
-    s.place("speech", p["say_whisper"], 11, 4.3, gain=0.34, pan_=-0.5)
+    s.place("solo", p["violin_a"], 0, 0, gain=1.00, pan_=-0.06)
+    s.place("speech", p["say_close"], 3, 4, gain=0.78)
+    s.place("speech", p["say_whisper"], 3, 4.3, gain=0.32, pan_=-0.5)
+    s.place("texture", p["drone_lo"], 5, 0, gain=0.42)
+    # second phrase climbs instead of falling, doubled an octave down
+    s.place("strings", p["strings_a"], 7, 0, gain=1.55)
+    s.place("strings", p["cello"], 7, 0, gain=1.20)
+    s.place("solo", p["violin_b"], 7, 0, gain=1.05, pan_=-0.04)
+    s.place("solo", p["violin_b_low"], 7, 0, gain=0.48, pan_=0.12)
+    s.place("metal", p["machine_lo"], 9, 0, gain=0.38)
+    s.place("fx", p["riser_n2"], 8, 0, gain=0.26)
+    # the room inhales before the hit
+    s.place("fx", T.reverse_tail(p["boom"], 3.0), 13, 0, gain=0.46)
+    s.place("metal", p["steam"], 14, 8, gain=0.36)
 
-    # ----------------------------------------------------------- 016-031 turn
-    log("the turn")
-    for i, b in enumerate((16, 20, 24, 28)):
-        s.place("strings", p[f"strings_rot{i}"], b, 0, gain=0.62 + 0.14 * i)
-    s.place("solo", ST.desecrate(p["violin_a"], 0.6, 3000, 6), 16, 0, gain=0.85)
-    s.place("texture", p["drone_lo"], 16, 0, gain=0.62)
-    s.place("texture", p["drone_mid"], 24, 0, gain=0.55)
-    s.place("metal", p["machine"], 16, 0, gain=0.60)
-    s.place("metal", p["machine"], 24, 0, gain=0.80)
-    for b in range(20, 32):
-        for st in ((0, 8) if b < 26 else (0, 4, 8, 12)):
-            s.place("kickfar", p["kick_soft"], b, st, gain=0.26 + 0.026 * (b - 20))
-            s.mark_kick(b, st)
-        if b >= 24:
-            s.place("metal", p["metal_b"], b, 6, gain=0.30, pan_=RNG.uniform(-0.5, 0.5))
-    s.place("metal", p["scrape_l"], 22, 12, gain=0.55, pan_=-0.45)
-    s.place("metal", p["chain"], 27, 2, gain=0.55, pan_=0.45)
-    s.place("fx", p["feedback"], 29, 8, gain=0.26, pan_=0.2)
-    approach(s, p, 32, power=1.0)
+    # ------------------------------------------------------ 015 the two hits
+    log("BOOM BOOM")
+    s.place("fx", p["boom"], 15, 0, gain=1.00)
+    s.place("metal", p["clang"], 15, 0, gain=0.55)
+    s.place("fx", p["boom2"], 15, 8, gain=1.00)
+    s.place("metal", p["hammer_lo"], 15, 8, gain=0.60)
+
+    # ---------------------------------------------------- 016-031 the machine
+    log("the machine")
+    enter(s, p, 16, power=1.2, horn=True)
+    lay_kicks(s, p, 16, 32, key="kick_hard", gain=1.0, ghosts=True, rolls=True)
+    lay_hats(s, p, 16, 32, density=16, gain=0.50, tips=True)
+    lay_perc(s, p, 16, 32, gain=0.9, claps=True)
+    lay_metal(s, p, 16, 32, gain=0.90)
+    for b in range(16, 32, 4):
+        s.place("metal", p["conveyor"], b, 0, gain=0.58)
+        s.place("texture", p["rust_b"], b, 0, gain=0.44)
+    # the lament, already coming apart, rides over the top of it
+    for i, bb in enumerate((16, 20, 24, 28)):
+        s.place("strings", p[f"strings_rot{i}"], bb, 0, gain=0.58 + 0.13 * i)
+    s.place("solo", ST.desecrate(p["violin_b"], 0.85, 2800, 7), 24, 0, gain=0.52)
+    s.place("metal", p["machine"], 16, 0, gain=0.72)
+    s.place("texture", p["drone_lo"], 16, 0, gain=0.52)
+    for b in range(23, 32, 8):
+        fill(s, p, b, "metal")
+        s.place("lead", p["scr_up"], b, 8, gain=0.26, pan_=RNG.uniform(-0.25, 0.25))
+    s.place("metal", p["hammer_lo"], 31, 12, gain=0.42)
 
     # --------------------------------------------------------- 032-047 groove
     log("groove")
-    enter(s, p, 32, power=0.9)
-    lay_kicks(s, p, 32, 48, key="kick", gain=0.92, ghosts=True, rolls=False)
+    lay_kicks(s, p, 32, 48, key="kick", gain=0.96, ghosts=True, rolls=False)
+    lay_hats(s, p, 32, 40, density=8, gain=0.40)
+    lay_hats(s, p, 40, 48, density=16, gain=0.46, tips=True)
+    lay_perc(s, p, 32, 48, gain=0.75, claps=True)
+    lay_metal(s, p, 32, 48, gain=0.85)
+    lay_acid(s, p, 36, 48, ACID_A, gain=0.42, cutoff=420, env_mod=2800, res=0.82, drive=6)
     for b in range(32, 48, 4):
-        s.place("metal", p["conveyor"], b, 0, gain=0.62)
+        s.place("metal", p["conveyor"], b, 0, gain=0.50)
         s.place("texture", p["rust_a"], b, 0, gain=0.40)
-    lay_metal(s, p, 32, 48, gain=0.95)
-    lay_hats(s, p, 32, 40, density=4, open_off=False, gain=0.30)
-    lay_hats(s, p, 40, 48, density=8, gain=0.38)
-    lay_perc(s, p, 36, 48, gain=0.6, claps=True)
-    s.place("metal", p["machine"], 32, 0, gain=0.75)
-    s.place("texture", p["drone_lo"], 40, 0, gain=0.42)
+    s.place("metal", p["machine"], 40, 0, gain=0.62)
+    s.place("texture", p["drone_mid"], 40, 0, gain=0.42)
     for b in (39, 47):
         fill(s, p, b, "metal")
 
@@ -581,15 +610,15 @@ def build(verbose=True):
     s.place("drums", tape_stop(p["groove_bar"], start=0.12, end_ratio=0.035,
                                curve=1.7, max_stretch=2.6), 104, 0, gain=0.8)
     s.place("fx", p["sub_drop"], 104, 0, gain=0.55)
-    s.place("texture", p["drone_lo"], 104, 0, gain=0.70)
-    s.place("metal", p["machine"], 104, 0, gain=0.70)
+    s.place("texture", p["drone_lo"], 104, 0, gain=0.40)
+    s.place("metal", p["machine"], 104, 0, gain=0.44)
     s.place("metal", p["steam"], 105, 6, gain=0.40, pan_=-0.35)
     for b in range(106, 112):
         for st in (0, 8):
             s.place("kickfar", p["kick_soft"], b, st, gain=0.44)
             s.mark_kick(b, st)
         s.place("metal", p["metal_b"], b, 6, gain=0.34, pan_=RNG.uniform(-0.5, 0.5))
-        s.place("texture", p["rust_a"], b, 0, gain=0.42)
+        s.place("texture", p["rust_a"], b, 0, gain=0.30)
     s.place("fx", p["feedback"], 109, 0, gain=0.26, pan_=-0.2)
     s.place("speech", p["forgive_close"], 110, 0, gain=0.52)
     approach(s, p, 112, power=0.8)
@@ -628,8 +657,8 @@ def build(verbose=True):
     s.place("strings", p["strings_b"], 160, 0, gain=1.40)
     s.place("strings", p["cello"], 160, 0, gain=1.10)
     s.place("solo", p["violin_a2"], 162, 0, gain=1.0, pan_=-0.05)
-    s.place("texture", p["drone_lo"], 160, 0, gain=0.50)
-    s.place("metal", p["machine_lo"], 160, 0, gain=0.45)
+    s.place("texture", p["drone_lo"], 160, 0, gain=0.30)
+    s.place("metal", p["machine_lo"], 160, 0, gain=0.28)
     s.place("speech", p["say_choir"], 168, 0, gain=0.46)
     s.place("strings", p["strings_b"], 168, 0, gain=1.25)
     for b in range(170, 176):
