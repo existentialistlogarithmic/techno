@@ -15,7 +15,8 @@ import time
 import numpy as np
 
 from technogen.track import build, process_buses, finalize
-from technogen.mixer import to_wav, to_mp3
+from technogen.mixer import to_wav, to_mp3, balance
+from technogen.track import TARGETS
 
 from technogen.track import BUSES
 BUS_ORDER = BUSES + ["rumble"]
@@ -34,6 +35,49 @@ def load_buses(path):
         if os.path.exists(f):
             out[nm] = np.load(f).astype(np.float64)
     return out
+
+
+# Buses grouped into the stems a person actually wants on a mixer channel.
+STEM_GROUPS = [
+    ("01_kick", ["kick", "kickfar"]),
+    ("02_sub_and_rumble", ["sub", "rumble"]),
+    ("03_drums", ["drums"]),
+    ("04_industrial_metal", ["metal"]),
+    ("05_bass_acid", ["bass"]),
+    ("06_leads", ["lead"]),
+    ("07_strings_and_voice", ["strings", "solo", "speech", "pad"]),
+    ("08_texture_and_fx", ["texture", "fx", "air"]),
+]
+
+
+def save_stems(buses, outdir, as_mp3=True, bitrate=320):
+    """Pre-master stems: balanced as in the mix, but without the master chain,
+    so they sum back to the mix and you can treat them yourself."""
+    os.makedirs(outdir, exist_ok=True)
+    gains = balance(buses, TARGETS, reference="kick", verbose=False)
+    total = None
+    scaled = {}
+    for nm, g in gains.items():
+        scaled[nm] = buses[nm] * g
+        total = scaled[nm] if total is None else total + scaled[nm]
+    # one common gain for the whole set, so the balance between stems is kept
+    head = 10 ** (-6.0 / 20) / max(1e-9, float(np.max(np.abs(total))))
+    written = []
+    for name, members in STEM_GROUPS:
+        mix = None
+        for nm in members:
+            if nm in scaled:
+                mix = scaled[nm] if mix is None else mix + scaled[nm]
+        if mix is None:
+            continue
+        mix = mix * head
+        path = os.path.join(outdir, name + (".mp3" if as_mp3 else ".wav"))
+        if as_mp3:
+            to_mp3(path, mix, bitrate=bitrate)
+        else:
+            to_wav(path, mix)
+        written.append(path)
+    return written
 
 
 def main():
@@ -58,6 +102,13 @@ def main():
         if cache:
             save_buses(cache, buses)
             print("      buses cached to", cache)
+
+    if "--stems" in args:
+        d = args[args.index("--stems") + 1]
+        fmt_wav = "--stems-wav" in args
+        print(f"[stems] writing to {d}/ as {'wav' if fmt_wav else 'mp3'}")
+        for f in save_stems(buses, d, as_mp3=not fmt_wav):
+            print("        ", f)
 
     print("[3/3] mixdown ->", out)
     mix = finalize(buses)
